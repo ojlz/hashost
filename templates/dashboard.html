@@ -91,7 +91,10 @@
           {% if can_choose_embed_color %}
           <div class="form-group">
             <label>Cor do embed</label>
-            <input type="color" name="embed_color" value="#0070f3">
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="color" name="embed_color" id="embedColor" value="#0070f3" style="flex:0">
+              <div id="colorPreview" style="flex:1;height:32px;border-radius:6px;background:#0070f3;border:1px solid var(--border);transition:background 0.15s"></div>
+            </div>
           </div>
           {% endif %}
           <div class="form-group">
@@ -120,6 +123,14 @@
   <script>
     const dz = document.getElementById('dropZone');
     const fi = document.getElementById('fileInput');
+    const embedColor = document.getElementById('embedColor');
+    const colorPreview = document.getElementById('colorPreview');
+
+    if (embedColor && colorPreview) {
+      embedColor.addEventListener('input', () => {
+        colorPreview.style.background = embedColor.value;
+      });
+    }
 
     dz.addEventListener('click', () => fi.click());
 
