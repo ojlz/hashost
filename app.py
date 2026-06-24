@@ -555,8 +555,6 @@ def signup():
                                        invite_code=invite_code)
             max_uses = invite.get('max_uses', 1)
             use_count = invite.get('use_count', 0)
-            if max_uses == 0:
-                max_uses = 1
             if max_uses > 0 and use_count >= max_uses:
                 return render_template('signup.html', error="Invite atingiu o limite de usos",
                                        invite_code=invite_code)
@@ -1197,9 +1195,9 @@ def account():
                         count = 1
                     if count > 50:
                         count = 50
-                    max_uses = int(request.form.get('max_uses', 1) or 1)
-                    if max_uses < -1:
-                        max_uses = -1
+                    max_uses = int(request.form.get('max_uses', 1) or 0)
+                    if max_uses < 0:
+                        max_uses = 0
                     if max_uses > 50:
                         max_uses = 50
                     if invite_count > 0:
@@ -1560,9 +1558,9 @@ def generate_invite():
     if count > 50:
         count = 50
 
-    max_uses = int(request.form.get('max_uses', 1) or 1)
-    if max_uses < -1:
-        max_uses = -1
+    max_uses = int(request.form.get('max_uses', 1) or 0)
+    if max_uses < 0:
+        max_uses = 0
     if max_uses > 50:
         max_uses = 50
 

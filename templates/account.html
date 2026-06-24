@@ -127,8 +127,8 @@
             </div>
             <div style="display:flex;gap:8px;align-items:center">
               <label style="color:var(--text2);font-size:12px;white-space:nowrap">Usos por invite:</label>
-              <input type="number" name="max_uses" value="1" min="-1" max="50" style="width:70px;padding:6px 10px;font-size:13px;background:var(--surface);color:var(--text1);border:1px solid var(--border);border-radius:6px">
-              <span style="color:var(--text3);font-size:11px">-1 = &#8734;, 0 = uso único</span>
+              <input type="number" name="max_uses" value="1" min="0" max="50" style="width:70px;padding:6px 10px;font-size:13px;background:var(--surface);color:var(--text1);border:1px solid var(--border);border-radius:6px">
+              <span style="color:var(--text3);font-size:11px">0 = &#8734;, 1 = uso único</span>
             </div>
           </div>
           <div>
@@ -196,7 +196,7 @@
                 <span class="copy-feedback" style="color:var(--accent);font-size:11px;margin-left:8px"></span>
               </div>
               <div style="font-size:11px;color:var(--text2);margin-top:2px">
-                {% if invite.max_uses is defined and invite.max_uses == -1 %}
+                {% if invite.max_uses is defined and invite.max_uses == 0 %}
                   Usos: {{ invite.use_count }} / &#8734;
                 {% elif invite.max_uses is defined %}
                   Usos: {{ invite.use_count }} / {{ invite.max_uses }}
