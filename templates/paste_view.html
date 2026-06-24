@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }} - HashHost</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .content-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      overflow-x: auto;
+    }
+    .content {
+      font-family: 'JetBrains Mono', monospace;
+      white-space: pre-wrap;
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 20px 0;
+    }
+    @media (max-width: 640px) {
+      .stats { grid-template-columns: 1fr; }
+    }
+    .stat-item {
+      background: var(--surface2);
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .stat-label {
+      color: var(--text2);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .stat-value {
+      font-size: 16px;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <a href="/tools" class="logo">H<span>Host</span></a>
+      <div class="nav">
+        <a href="/p/{{ paste_id }}/raw" class="btn btn-secondary btn-sm">Raw</a>
+        <a href="/tools/pastebin" class="btn btn-ghost btn-sm">Novo paste</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h1 style="margin-bottom:8px">{{ title }}</h1>
+      <p style="color:var(--text2);font-size:13px">Criado em {{ created_date }} / {{ syntax }}</p>
+
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-label">Visualizacoes</div>
+          <div class="stat-value">{{ views }}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Tamanho</div>
+          <div class="stat-value">{{ size_kb }} KB</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Expira em</div>
+          <div class="stat-value">{{ expires_text }}</div>
+        </div>
+      </div>
+
+      <div class="content-box">
+        <div class="content">{{ safe_content }}</div>
+      </div>
+
+      <div style="text-align:center;margin-top:16px">
+        <a href="/p/{{ paste_id }}/raw" class="btn btn-primary">Ver em texto puro</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

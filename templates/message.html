@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>HashHost</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container" style="max-width:400px;padding-top:80px;text-align:center">
+    {% if type == 'error' %}
+    <div class="error">{{ message }}</div>
+    {% else %}
+    <div class="success">{{ message }}</div>
+    {% endif %}
+    <a href="{{ back_url }}" class="btn btn-primary" style="margin-top:16px">{{ back_text }}</a>
+  </div>
+</body>
+</html>

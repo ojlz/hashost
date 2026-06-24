@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>HashHost - Novo usuario</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container" style="max-width:480px">
+    <div class="header">
+      <a href="/admin" class="logo">H<span>Host</span></a>
+      <a href="/admin" class="btn btn-ghost">Voltar</a>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-bottom:24px">Novo usuario</h2>
+      <form method="POST">
+        <div class="form-group">
+          <label>Nome de usuario</label>
+          <input type="text" name="username" required maxlength="50" placeholder="nome-do-usuario">
+        </div>
+        <div class="form-group">
+          <label>Senha</label>
+          <input type="password" name="password" required minlength="6" placeholder="minimo 6 caracteres">
+        </div>
+        <div class="form-group">
+          <label>Vida util dos arquivos (horas, 0 = permanente)</label>
+          <input type="number" name="file_lifetime" value="0" min="0">
+        </div>
+
+        <h2 style="margin:24px 0 16px;font-size:16px">Permissoes</h2>
+        <div class="grid" style="grid-template-columns:1fr 1fr">
+          <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
+            <input type="checkbox" name="change_password" checked> Alterar senha
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
+            <input type="checkbox" name="upload_videos" checked> Enviar videos
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
+            <input type="checkbox" name="custom_urls" checked> URLs customizadas
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
+            <input type="checkbox" name="is_admin"> Admin
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
+            <input type="checkbox" name="choose_embed_color" checked> Cor do embed
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
+            <input type="checkbox" name="permanent_files" checked> Arquivos permanentes
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:24px">Criar usuario</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

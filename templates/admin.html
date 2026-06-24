@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>HashHost - Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .stat-card { text-align: center; padding: 24px; }
+    .user-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: var(--surface2);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    .user-actions { display: flex; gap: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <a href="/" class="logo">H<span>Host</span></a>
+      <div class="nav">
+        <a href="/admin/create_user" class="btn btn-primary btn-sm">Novo usuario</a>
+        <a href="/admin/cleanup" class="btn btn-secondary btn-sm">Limpar anonimos</a>
+        <a href="/" class="btn btn-ghost btn-sm">Voltar</a>
+      </div>
+    </div>
+
+    <h1 style="margin-bottom:24px">Painel administrativo</h1>
+
+    <div class="grid">
+      <div class="card stat-card">
+        <div class="stat">{{ total_files }}</div>
+        <div class="stat-label">Arquivos</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat">{{ total_users }}</div>
+        <div class="stat-label">Usuarios</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat">{{ total_size_mb }} MB</div>
+        <div class="stat-label">Espaco usado</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat">{{ total_views }}</div>
+        <div class="stat-label">Visualizacoes</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2 style="margin-bottom:16px">Usuarios</h2>
+      {% for username, user in users.items() %}
+      <div class="user-item">
+        <div>
+          <strong>{{ username }}</strong>
+          <span class="badge">{{ user.uploads }} envios</span>
+        </div>
+        <div class="user-actions">
+          <a href="/admin/delete_user/{{ username }}" class="btn btn-danger btn-sm"
+             onclick="return confirm('Remover {{ username }}?')">Remover</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2 style="margin-bottom:16px">Top envios</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Envios</th>
+            <th>Tamanho</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for username, stats in top_users %}
+          <tr>
+            <td>{{ username }}</td>
+            <td>{{ stats.uploads }}</td>
+            <td>{{ stats.size_mb }} MB</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

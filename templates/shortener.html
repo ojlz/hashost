@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>HashHost - Encurtador</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .result {
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: none;
+    }
+    .link-box {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .link-box input {
+      flex: 1;
+      font-family: monospace;
+      font-size: 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width:560px">
+    <div class="header">
+      <a href="/tools" class="logo">H<span>Host</span></a>
+      <a href="/tools" class="btn btn-ghost">Voltar</a>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-bottom:20px">Encurtador de links</h2>
+      <form id="shortenerForm">
+        <div class="form-group">
+          <label>URL para encurtar</label>
+          <input type="url" name="url" placeholder="https://exemplo.com/url-muito-longa" required>
+        </div>
+        <div class="form-group">
+          <label>Alias (opcional)</label>
+          <input type="text" name="custom_alias" placeholder="meu-link">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%">Encurtar</button>
+      </form>
+
+      <div class="result" id="result">
+        <p style="font-size:13px;color:var(--text2)">Link encurtado:</p>
+        <div class="link-box">
+          <input type="text" id="shortUrl" readonly>
+          <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('shortUrl').value)">Copiar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('shortenerForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const fd = new URLSearchParams(new FormData(e.target));
+      const r = await fetch('/tools/shortener', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: fd
+      });
+      const d = await r.json();
+      if (d.short_url) {
+        document.getElementById('result').style.display = 'block';
+        document.getElementById('shortUrl').value = d.short_url;
+      } else {
+        alert(d.error);
+      }
+    });
+  </script>
+</body>
+</html>
