@@ -20,11 +20,13 @@
 }
 
 body {
-  background: var(--bg);
+  background: transparent;
   color: var(--text);
   font-family: 'JetBrains Mono', monospace;
   min-height: 100vh;
   line-height: 1.5;
+  position: relative;
+  z-index: 1;
 }
 
 a {
