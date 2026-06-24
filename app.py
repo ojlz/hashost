@@ -155,6 +155,20 @@ def load_users():
             }
         }
         save_json('users.json', users)
+    else:
+        migrated = False
+        for username, user in users.items():
+            if 'status' not in user:
+                user['status'] = 'approved'
+                migrated = True
+            if 'permissions' not in user:
+                user['permissions'] = DEFAULT_PERMISSIONS.copy()
+                migrated = True
+            if 'uploads' not in user:
+                user['uploads'] = 0
+                migrated = True
+        if migrated:
+            save_json('users.json', users)
     return users
 
 
