@@ -629,3 +629,11 @@ input:focus, textarea:focus, select:focus {
     transform: none;
   }
 }
+
+/* Noscript fallback: show all elements when JS is disabled */
+@media (scripting: none) {
+  .reveal, .reveal-left, .reveal-right, .reveal-scale, .stagger-children {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

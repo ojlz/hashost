@@ -58,9 +58,7 @@
         {% if is_admin %}
         <a href="/admin" class="btn btn-ghost">Admin</a>
         {% endif %}
-        {% if can_change_password %}
-        <a href="/change_password" class="btn btn-ghost">Senha</a>
-        {% endif %}
+        <a href="/account" class="btn btn-ghost">Conta</a>
         <span class="badge">{{ username }}</span>
         <a href="/logout" class="btn btn-ghost">Sair</a>
       </div>
@@ -83,12 +81,12 @@
 
         <div class="options">
           <div class="form-group">
-            <label>Titulo</label>
-            <input type="text" name="title" placeholder="Titulo opcional">
+            <label>Título</label>
+            <input type="text" name="title" placeholder="Título opcional">
           </div>
           <div class="form-group">
-            <label>Descricao</label>
-            <input type="text" name="description" placeholder="Descricao opcional">
+            <label>Descrição</label>
+            <input type="text" name="description" placeholder="Descrição opcional">
           </div>
           {% if can_choose_embed_color %}
           <div class="form-group">
@@ -97,13 +95,13 @@
           </div>
           {% endif %}
           <div class="form-group">
-            <label>Vida util</label>
+            <label>Vida útil</label>
             <select name="file_lifetime">
-              <option value="0">Permanente</option>
-              <option value="1h">1 hora</option>
-              <option value="3d">3 dias</option>
-              <option value="1w">1 semana</option>
-              <option value="1M">1 mes</option>
+              {% for opt in file_lifetime_options %}
+                {% if opt.value in allowed_lifetimes %}
+                <option value="{{ opt.value }}">{{ opt.label }}</option>
+                {% endif %}
+              {% endfor %}
             </select>
           </div>
         </div>
@@ -132,17 +130,28 @@
 
     dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
 
+    function showFileName(name) {
+      dz.querySelector('p').innerHTML = name + ' <a href="#" id="resetFile" style="color:var(--accent);font-size:12px;margin-left:8px">Trocar</a>';
+      document.getElementById('resetFile').addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        fi.value = '';
+        dz.querySelector('p').textContent = 'Arraste o arquivo aqui ou clique para selecionar';
+        document.getElementById('previewBox').style.display = 'none';
+      });
+    }
+
     dz.addEventListener('drop', e => {
       e.preventDefault();
       dz.classList.remove('dragover');
       fi.files = e.dataTransfer.files;
-      dz.querySelector('p').textContent = fi.files[0].name;
+      showFileName(fi.files[0].name);
       showPreview(fi.files[0]);
     });
 
     fi.addEventListener('change', () => {
       if (fi.files[0]) {
-        dz.querySelector('p').textContent = fi.files[0].name;
+        showFileName(fi.files[0].name);
         showPreview(fi.files[0]);
       }
     });
@@ -170,7 +179,7 @@
         const t = await r.text();
         if (r.ok) {
           document.getElementById('resultBox').style.display = 'block';
-          const url = t.replace('Upload concluido: ', '');
+          const url = t.replace('Upload concluído: ', '');
           document.getElementById('resultLink').href = url;
           document.getElementById('resultLink').textContent = url;
         } else {
@@ -181,7 +190,8 @@
       }
     });
   </script>
+
+  <script src="/static/wavy-canvas.js"></script>
+  <script src="/static/animations.js"></script>
 </body>
-<script src="/static/wavy-canvas.js"></script>
-<script src="/static/animations.js"></script>
 </html>

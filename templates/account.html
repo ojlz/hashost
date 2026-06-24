@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>HashHost - Minha conta</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .section { margin-bottom: 32px; }
+    .section-title { font-size: 16px; margin-bottom: 16px; color: var(--text1); }
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: var(--surface2);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    .file-info { flex: 1; min-width: 0; }
+    .file-title { font-size: 14px; font-weight: 500; }
+    .file-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    .invite-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: var(--surface2);
+      border-radius: 8px;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+    .invite-code { font-family: monospace; color: var(--accent); word-break: break-all; font-size: 12px; }
+    .invite-url { font-family: monospace; color: var(--text2); font-size: 11px; margin-top: 2px; word-break: break-all; }
+    .badge-used { background: rgba(0,170,0,0.1); color: #0a0; border: 1px solid rgba(0,170,0,0.2); }
+    .badge-available { background: rgba(0,112,243,0.1); color: var(--accent); border: 1px solid rgba(0,112,243,0.2); }
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width:640px">
+    <div class="header">
+      <a href="/dashboard" class="logo glitch" data-text="HHost">H<span>Host</span></a>
+      <div class="nav">
+        <a href="/dashboard" class="btn btn-ghost">Painel</a>
+        <span class="badge">{{ username }}</span>
+        <a href="/logout" class="btn btn-ghost">Sair</a>
+      </div>
+    </div>
+
+    <h1 style="margin-bottom:24px">Minha conta</h1>
+
+    {% if error %}
+    <div class="error" role="alert" style="margin-bottom:16px">{{ error }}</div>
+    {% endif %}
+    {% if success %}
+    <div class="success" role="alert" style="margin-bottom:16px">{{ success }}</div>
+    {% endif %}
+
+    <div class="card reveal">
+      <div class="section">
+        <h2 class="section-title">Email</h2>
+        <form method="POST">
+          <input type="hidden" name="action" value="update_email">
+          <div class="form-group">
+            <input type="email" name="email" value="{{ email }}" required placeholder="seu@email.com">
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">Atualizar email</button>
+        </form>
+      </div>
+    </div>
+
+    {% if perms.can_change_password %}
+    <div class="card reveal" style="margin-top:16px">
+      <div class="section">
+        <h2 class="section-title">Alterar senha</h2>
+        <form method="POST">
+          <input type="hidden" name="action" value="change_password">
+          <div class="form-group">
+            <label>Senha atual</label>
+            <input type="password" name="current_password" required placeholder="sua senha atual">
+          </div>
+          <div class="form-group">
+            <label>Nova senha</label>
+            <input type="password" name="new_password" required minlength="6" placeholder="minimo 6 caracteres">
+          </div>
+          <div class="form-group">
+            <label>Confirmar nova senha</label>
+            <input type="password" name="confirm_password" required minlength="6" placeholder="repita a nova senha">
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">Alterar senha</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if perms.can_create_invites %}
+    <div class="card reveal" style="margin-top:16px">
+      <div class="section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h2 class="section-title" style="margin-bottom:0">Convites</h2>
+          {% if perms.invite_count != 0 %}
+          <form method="POST" style="display:inline">
+            <input type="hidden" name="action" value="generate_invite">
+            <button type="submit" class="btn btn-primary btn-sm">Gerar convite</button>
+          </form>
+          {% endif %}
+        </div>
+        {% if perms.invite_count == 0 %}
+        <p style="color:var(--text2);font-size:12px;margin-bottom:12px">Limite de invites atingido</p>
+        {% else %}
+        <p style="color:var(--text2);font-size:12px;margin-bottom:12px">Restam {{ perms.invite_count }} convites</p>
+        {% endif %}
+        {% if invites %}
+          {% for code, invite in invites.items() %}
+          <div class="invite-item">
+            <div style="flex:1;min-width:0">
+              <div class="invite-code">{{ code }}</div>
+              <div class="invite-url">{{ DOMAIN }}/iv/{{ code }}</div>
+              <div style="margin-top:4px">
+                {% if invite.used %}
+                <span class="badge badge-used">Usado por {{ invite.used_by }}</span>
+                {% else %}
+                <span class="badge badge-available">Disponível</span>
+                {% endif %}
+              </div>
+            </div>
+            {% if not invite.used %}
+            <form method="POST" style="margin-left:8px">
+              <input type="hidden" name="action" value="delete_invite">
+              <input type="hidden" name="code" value="{{ code }}">
+              <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Remover este convite?')">Remover</button>
+            </form>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <p style="color:var(--text2);font-size:14px">Nenhum convite criado.</p>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card reveal" style="margin-top:16px">
+      <div class="section">
+        <h2 class="section-title">Meus arquivos</h2>
+        {% if user_files %}
+          {% for f in user_files %}
+          <div class="file-item">
+            <div class="file-info">
+              <div class="file-title">{{ f.title }}</div>
+              <div class="file-meta">
+                {{ f.original_filename }} &middot;
+                {{ f.views }} visualizações &middot;
+                {% if f.expire_at %}
+                  Expira em {{ f.expire_at[:10] }}
+                {% else %}
+                  Permanente
+                {% endif %}
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;margin-left:8px">
+              <a href="/s/{{ f.short_id }}" class="btn btn-ghost btn-sm" target="_blank">Abrir</a>
+              <form method="POST" style="display:inline">
+                <input type="hidden" name="action" value="delete_file">
+                <input type="hidden" name="short_id" value="{{ f.short_id }}">
+                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Remover este arquivo?')">Remover</button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p style="color:var(--text2);font-size:14px">Nenhum arquivo enviado.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/wavy-canvas.js"></script>
+  <script src="/static/animations.js"></script>
+</body>
+</html>

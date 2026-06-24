@@ -13,24 +13,46 @@
   var mouse = { x: 0, y: 0 };
 
   var canvas = document.createElement("canvas");
-  canvas.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:auto";
+  canvas.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none";
 
   var wrapper = document.createElement("div");
   wrapper.style.cssText = "position:fixed;inset:0;width:100%;height:100%;overflow:hidden;background:" + backgroundColor + ";z-index:-1";
   wrapper.appendChild(canvas);
 
-  if (document.body.firstChild) {
-    document.body.insertBefore(wrapper, document.body.firstChild);
-  } else {
-    document.body.appendChild(wrapper);
+  var ctx = null;
+
+  function initCanvas() {
+    if (!document.body) {
+      setTimeout(initCanvas, 50);
+      return;
+    }
+    if (document.body.firstChild) {
+      document.body.insertBefore(wrapper, document.body.firstChild);
+    } else {
+      document.body.appendChild(wrapper);
+    }
+    resizeCanvas();
+    ctx = canvas.getContext("2d");
   }
 
   function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    canvas.style.width = window.innerWidth + "px";
+    canvas.style.height = window.innerHeight + "px";
+    if (ctx) ctx.scale(dpr, dpr);
   }
-  resizeCanvas();
-  window.addEventListener("resize", resizeCanvas);
+
+  var resizeTimer = null;
+  function debouncedResize() {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      resizeCanvas();
+    }, 200);
+  }
+
+  window.addEventListener("resize", debouncedResize);
 
   function getMouseInfluence(x, y) {
     var dx = x - mouse.x;
@@ -45,17 +67,19 @@
   });
 
   function animate() {
-    var ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!ctx) {
+      requestId = requestAnimationFrame(animate);
+      return;
+    }
 
     time += animationSpeed;
-    var width = canvas.width;
-    var height = canvas.height;
+    var width = window.innerWidth;
+    var height = window.innerHeight;
 
     ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, width, height);
 
-    var numPrimaryLines = 30;
+    var numPrimaryLines = 15;
     for (var i = 0; i < numPrimaryLines; i++) {
       var yPos = (i / numPrimaryLines) * height;
       var mouseInfl = getMouseInfluence(width / 2, yPos);
@@ -78,7 +102,7 @@
       ctx.stroke();
     }
 
-    var numSecondaryLines = 20;
+    var numSecondaryLines = 10;
     for (var i = 0; i < numSecondaryLines; i++) {
       var xPos = (i / numSecondaryLines) * width;
       var mouseInfl = getMouseInfluence(xPos, height / 2);
@@ -101,7 +125,7 @@
       ctx.stroke();
     }
 
-    var numAccentLines = 12;
+    var numAccentLines = 6;
     for (var i = 0; i < numAccentLines; i++) {
       var offset = (i / numAccentLines) * width * 1.5 - width * 0.25;
       var amplitude = 30 + 15 * Math.cos(time * 0.22 + i * 0.12);
@@ -131,7 +155,27 @@
     requestId = requestAnimationFrame(animate);
   }
 
-  animate();
+  function startAnimation() {
+    if (requestId) cancelAnimationFrame(requestId);
+    animate();
+  }
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+      if (requestId) {
+        cancelAnimationFrame(requestId);
+        requestId = null;
+      }
+    } else {
+      startAnimation();
+    }
+  });
+
+  mouse.x = window.innerWidth / 2;
+  mouse.y = window.innerHeight / 2;
+
+  initCanvas();
+  startAnimation();
 
   window.addEventListener("beforeunload", function () {
     if (requestId) cancelAnimationFrame(requestId);

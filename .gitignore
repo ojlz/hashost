@@ -28,3 +28,6 @@ build/
 .vimrc
 README.txt
 app.txt
+invite_rate_limits.json
+invites.json
+hashbin_data/

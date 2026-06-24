@@ -17,12 +17,12 @@
 
     <div class="card reveal">
       <h2>HashBin</h2>
-      <p style="color:var(--text2);font-size:14px;margin-bottom:20px">Compartilhar codigo e texto</p>
+      <p style="color:var(--text2);font-size:14px;margin-bottom:20px">Compartilhar código e texto</p>
 
       <form id="hashbinForm">
         <div class="form-group">
-          <label>Titulo</label>
-          <input type="text" name="title" placeholder="Titulo opcional">
+          <label>Título</label>
+          <input type="text" name="title" placeholder="Título opcional">
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
@@ -46,20 +46,20 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Expiracao</label>
+            <label>Expiração</label>
             <select name="expiry">
               <option value="0">Nunca</option>
               <option value="1">1 hora</option>
               <option value="24">24 horas</option>
               <option value="168">1 semana</option>
-              <option value="720">1 mes</option>
+              <option value="720">1 mês</option>
             </select>
           </div>
         </div>
 
         <div class="form-group">
-          <label>Conteudo</label>
-          <textarea name="content" rows="20" placeholder="Cole o codigo ou texto aqui..." style="font-family:'JetBrains Mono',monospace;font-size:13px"></textarea>
+          <label>Conteúdo</label>
+          <textarea name="content" rows="20" placeholder="Cole o código ou texto aqui..." style="font-family:'JetBrains Mono',monospace;font-size:13px"></textarea>
         </div>
 
         <button type="submit" class="btn btn-primary" style="width:100%">Criar paste</button>
@@ -76,6 +76,16 @@
   </div>
 
   <script>
+    document.querySelector('textarea[name="content"]').addEventListener('keydown', function(e) {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = this.selectionStart;
+        const end = this.selectionEnd;
+        this.value = this.value.substring(0, start) + '  ' + this.value.substring(end);
+        this.selectionStart = this.selectionEnd = start + 2;
+      }
+    });
+
     document.getElementById('hashbinForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const fd = new FormData(e.target);
@@ -91,7 +101,7 @@
         resultBox.style.display = 'block';
         resultBox.scrollIntoView({ behavior: 'smooth' });
       } catch (err) {
-        alert('Erro de conexao');
+        alert('Erro de conexão');
       }
     });
 
@@ -101,7 +111,8 @@
       navigator.clipboard.writeText(el.value);
     }
   </script>
+
+  <script src="/static/wavy-canvas.js"></script>
+  <script src="/static/animations.js"></script>
 </body>
-<script src="/static/wavy-canvas.js"></script>
-<script src="/static/animations.js"></script>
 </html>

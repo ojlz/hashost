@@ -52,10 +52,10 @@
 <body>
   <div class="container">
     <div class="header">
-      <a href="/tools" class="logo glitch" data-text="HHost">H<span>Host</span></a>
+      <a href="/dashboard" class="logo glitch" data-text="HHost">H<span>Host</span></a>
       <div class="nav">
         <a href="/p/{{ paste_id }}/raw" class="btn btn-secondary btn-sm">Raw</a>
-        <a href="/tools/pastebin" class="btn btn-ghost btn-sm">Novo paste</a>
+        <a href="/hashbin" class="btn btn-ghost btn-sm">Novo paste</a>
       </div>
     </div>
 
@@ -79,7 +79,7 @@
       </div>
 
       <div class="content-box">
-        <div class="content">{{ safe_content }}</div>
+        <div class="content">{{ safe_content | safe }}</div>
       </div>
 
       <div style="text-align:center;margin-top:16px">
@@ -87,7 +87,7 @@
       </div>
     </div>
   </div>
+  <script src="/static/wavy-canvas.js"></script>
+  <script src="/static/animations.js"></script>
 </body>
-<script src="/static/wavy-canvas.js"></script>
-<script src="/static/animations.js"></script>
 </html>

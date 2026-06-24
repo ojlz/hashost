@@ -16,12 +16,18 @@
       </div>
 
       {% if error %}
-      <div class="error">{{ error }}</div>
+      <div class="error" role="alert">{{ error }}</div>
+      {% endif %}
+
+      {% if inviter %}
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:14px;color:var(--text2)">
+        Você foi convidado por <strong style="color:var(--text1)">{{ inviter }}</strong>
+      </div>
       {% endif %}
 
       <form method="POST">
         <div class="form-group">
-          <label>Usuario</label>
+          <label>Usuário</label>
           <input type="text" name="username" required autofocus placeholder="seu-usuario">
         </div>
         <div class="form-group">
@@ -32,17 +38,25 @@
           <label>Senha</label>
           <input type="password" name="password" required placeholder="sua-senha">
         </div>
+        {% if invite_code %}
         <div class="form-group">
-          <label>Codigo de convite</label>
-          <input type="text" name="invite_code" placeholder="Opcional - se tiver um codigo">
+          <label>Código de convite</label>
+          <input type="text" name="invite_code" value="{{ invite_code }}" readonly style="opacity:0.7;cursor:not-allowed">
         </div>
+        {% else %}
+        <div class="form-group">
+          <label>Código de convite</label>
+          <input type="text" name="invite_code" placeholder="Opcional - se tiver um código">
+        </div>
+        {% endif %}
         <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px">Criar conta</button>
       </form>
 
-      <p style="text-align:center;margin-top:24px;font-size:14px;color:var(--text2)">Ja tem uma conta? <a href="/login">Entrar</a></p>
+      <p style="text-align:center;margin-top:24px;font-size:14px;color:var(--text2)">Já tem uma conta? <a href="/login">Entrar</a></p>
     </div>
   </div>
+
+  <script src="/static/wavy-canvas.js"></script>
+  <script src="/static/animations.js"></script>
 </body>
-<script src="/static/wavy-canvas.js"></script>
-<script src="/static/animations.js"></script>
 </html>

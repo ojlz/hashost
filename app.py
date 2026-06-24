@@ -1,4 +1,5 @@
 import os
+import re
 import secrets
 import json
 import io
@@ -53,14 +54,15 @@ def get_secret_key():
 app.secret_key = os.environ.get("SECRET_KEY") or get_secret_key()
 
 UPLOAD_FOLDER = 'uploads'
-TOOLS_FOLDER = 'tools_data'
+HASHBIN_FOLDER = 'hashbin_data'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(TOOLS_FOLDER, exist_ok=True)
+os.makedirs(HASHBIN_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 300 * 1024 * 1024
 
 DOMAIN = os.environ.get("DOMAIN", "https://hashost.pythonanywhere.com")
 RATE_LIMIT_SECONDS = 5
+INVITE_RATE_LIMIT = 5
 
 ALLOWED_MIME_TYPES = {
     'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
@@ -80,7 +82,7 @@ FILE_LIFETIME_OPTIONS = [
     {'value': '1h', 'label': '1 hora', 'seconds': 3600},
     {'value': '3d', 'label': '3 dias', 'seconds': 259200},
     {'value': '1w', 'label': '1 semana', 'seconds': 604800},
-    {'value': '1M', 'label': '1 mes', 'seconds': 2592000},
+    {'value': '1M', 'label': '1 mês', 'seconds': 2592000},
     {'value': '0', 'label': 'Permanente', 'seconds': 0},
 ]
 
@@ -167,6 +169,9 @@ def load_users():
             if 'uploads' not in user:
                 user['uploads'] = 0
                 migrated = True
+            if 'email' not in user:
+                user['email'] = ''
+                migrated = True
         if migrated:
             save_json('users.json', users)
     return users
@@ -175,6 +180,13 @@ def load_users():
 def sanitize_text(text):
     clean = bleach.clean(str(text or ""), tags=[], strip=True)
     return clean.replace('<', '').replace('>', '').replace('"', '').replace("'", '').replace('&', '')[:200]
+
+
+COLOR_REGEX = re.compile(r'^#[0-9a-fA-F]{6}$')
+
+
+def is_valid_color(color):
+    return bool(COLOR_REGEX.match(color))
 
 
 def check_rate_limit(username):
@@ -196,37 +208,52 @@ def update_rate_limit(username):
     save_json('rate_limits.json', rate_limits)
 
 
+def check_invite_rate_limit(ip):
+    rate_limits = load_json('invite_rate_limits.json')
+    now = time.time()
+    if ip in rate_limits:
+        attempts = [t for t in rate_limits[ip] if now - t < 60]
+        rate_limits[ip] = attempts
+        if len(attempts) >= INVITE_RATE_LIMIT:
+            return False
+        rate_limits[ip].append(now)
+    else:
+        rate_limits[ip] = [now]
+    save_json('invite_rate_limits.json', rate_limits)
+    return True
+
+
 def is_safe_file(file_content, filename, allow_video=False):
     ext = os.path.splitext(filename)[1].lower()
 
     if ext in DANGEROUS_EXTENSIONS:
         return False, "Tipo de arquivo perigoso"
     if ext in VIDEO_EXTENSIONS and not allow_video:
-        return False, "Upload de videos nao autorizado"
+        return False, "Upload de vídeos não autorizado"
     if ext not in ALLOWED_EXTENSIONS:
-        return False, "Extensao nao permitida: %s" % ext
+        return False, "Extensão não permitida: %s" % ext
 
     max_size = 100 * 1024 * 1024 if allow_video else 20 * 1024 * 1024
     if len(file_content) < 100:
         return False, "Arquivo muito pequeno"
     if len(file_content) > max_size:
-        return False, "Arquivo muito grande (maximo %dMB)" % (max_size // 1024 // 1024)
+        return False, "Arquivo muito grande (máximo %dMB)" % (max_size // 1024 // 1024)
 
     try:
         kind = filetype.guess(file_content)
         mime_type = kind.mime if kind else None
         if not mime_type or mime_type not in ALLOWED_MIME_TYPES:
-            return False, "MIME nao permitido: %s" % mime_type
+            return False, "MIME não permitido: %s" % mime_type
         if ext not in VIDEO_EXTENSIONS:
             img = Image.open(io.BytesIO(file_content))
             img.verify()
     except Exception as e:
-        return False, "Arquivo invalido: %s" % str(e)
+        return False, "Arquivo inválido: %s" % str(e)
 
     lower = file_content.lower()
     for pattern in [b'<script', b'javascript:', b'vbscript:', b'onload=', b'onerror=']:
         if pattern in lower:
-            return False, "Conteudo suspeito"
+            return False, "Conteúdo suspeito"
 
     return True, "OK"
 
@@ -264,18 +291,17 @@ def get_user_perms(username):
 
 
 def generate_invite_code():
-    return secrets.token_urlsafe(8)
+    return secrets.token_urlsafe(24)
 
 
-def cleanup_anonymous_files():
+def cleanup_expired_files():
     try:
         short_urls = load_json('short_urls.json')
         now = datetime.now()
         to_remove = []
         for short_id, data in short_urls.items():
-            if data.get('anonymous', False):
-                upload_time = datetime.fromisoformat(data['upload_time'])
-                if (now - upload_time).total_seconds() > 1200:
+            if data.get('expire_at'):
+                if datetime.fromisoformat(data['expire_at']) < now:
                     filepath = os.path.join(UPLOAD_FOLDER, data['filename'])
                     if os.path.exists(filepath):
                         os.remove(filepath)
@@ -285,14 +311,36 @@ def cleanup_anonymous_files():
         if to_remove:
             save_json('short_urls.json', short_urls)
     except Exception as e:
-        print("Erro na limpeza: %s" % e)
+        print("Erro na limpeza de arquivos: %s" % e)
+
+
+def cleanup_expired_pastes():
+    try:
+        pastes = load_json('pastes.json')
+        now = datetime.now()
+        to_remove = []
+        for paste_id, data in pastes.items():
+            if data.get('expires'):
+                if datetime.fromisoformat(data['expires']) < now:
+                    paste_file = os.path.join(HASHBIN_FOLDER, '%s.txt' % paste_id)
+                    if os.path.exists(paste_file):
+                        os.remove(paste_file)
+                    to_remove.append(paste_id)
+        for paste_id in to_remove:
+            del pastes[paste_id]
+        if to_remove:
+            save_json('pastes.json', pastes)
+    except Exception as e:
+        print("Erro na limpeza de pastes: %s" % e)
 
 
 def schedule_cleanup():
-    cleanup_anonymous_files()
+    cleanup_expired_files()
+    cleanup_expired_pastes()
     threading.Timer(300, schedule_cleanup).start()
 
 schedule_cleanup()
+
 
 # ---------------------------------------------------------------------------
 # Routes — Public
@@ -310,12 +358,12 @@ def login():
         username = sanitize_text(request.form.get('username', '').strip())
         password = request.form.get('password', '')
         if not username or not password:
-            return render_template('login.html', error="Usuario e senha obrigatorios")
+            return render_template('login.html', error="Usuário e senha obrigatórios")
         users = load_users()
         if username in users and check_password(password, users[username]['password_hash']):
             user = users[username]
             if user.get('status') == 'pending':
-                return render_template('login.html', error="Sua conta esta pendente de aprovacao")
+                return render_template('login.html', error="Sua conta está pendente de aprovação")
             if user.get('status') == 'rejected':
                 return render_template('login.html', error="Sua conta foi rejeitada")
             if not user['password_hash'].startswith('$2'):
@@ -324,8 +372,34 @@ def login():
             session.permanent = True
             app.permanent_session_lifetime = timedelta(hours=24)
             return redirect(url_for('index'))
-        return render_template('login.html', error="Usuario ou senha incorretos")
+        return render_template('login.html', error="Usuário ou senha incorretos")
     return render_template('login.html')
+
+
+@app.route('/iv/<code>')
+def invite_page(code):
+    ip = request.remote_addr
+    if not check_invite_rate_limit(ip):
+        return render_template('message.html', type='error',
+                               message="Muitas tentativas. Aguarde 1 minuto.",
+                               back_url='/', back_text='Voltar')
+    invites = load_json('invites.json')
+    if code not in invites:
+        return render_template('message.html', type='error',
+                               message="Convite inválido.",
+                               back_url='/', back_text='Voltar')
+    invite = invites[code]
+    if invite.get('used'):
+        return render_template('message.html', type='error',
+                               message="Este convite já foi utilizado.",
+                               back_url='/', back_text='Voltar')
+    if invite.get('expires'):
+        if datetime.fromisoformat(invite['expires']) < datetime.now():
+            return render_template('message.html', type='error',
+                                   message="Este convite expirou.",
+                                   back_url='/', back_text='Voltar')
+    return render_template('signup.html', invite_code=code,
+                           inviter=invite.get('created_by', ''))
 
 
 @app.route('/signup', methods=['GET', 'POST'])
@@ -337,32 +411,41 @@ def signup():
         invite_code = sanitize_text(request.form.get('invite_code', '').strip())
 
         if not username or not email or not password:
-            return render_template('signup.html', error="Usuario, email e senha sao obrigatorios")
+            return render_template('signup.html', error="Usuário, email e senha são obrigatórios",
+                                   invite_code=invite_code)
         if len(username) < 3:
-            return render_template('signup.html', error="Usuario deve ter pelo menos 3 caracteres")
+            return render_template('signup.html', error="Usuário deve ter pelo menos 3 caracteres",
+                                   invite_code=invite_code)
         if len(password) < 6:
-            return render_template('signup.html', error="Senha deve ter pelo menos 6 caracteres")
+            return render_template('signup.html', error="Senha deve ter pelo menos 6 caracteres",
+                                   invite_code=invite_code)
         if '@' not in email:
-            return render_template('signup.html', error="Email invalido")
+            return render_template('signup.html', error="Email inválido",
+                                   invite_code=invite_code)
 
         users = load_users()
         if username in users:
-            return render_template('signup.html', error="Usuario ja existe")
+            return render_template('signup.html', error="Usuário já existe",
+                                   invite_code=invite_code)
 
         for u in users.values():
             if u.get('email') == email:
-                return render_template('signup.html', error="Email ja esta em uso")
+                return render_template('signup.html', error="Email já está em uso",
+                                       invite_code=invite_code)
 
         if invite_code:
             invites = load_json('invites.json')
             if invite_code not in invites:
-                return render_template('signup.html', error="Codigo de invite invalido")
+                return render_template('signup.html', error="Código de invite inválido",
+                                       invite_code=invite_code)
             invite = invites[invite_code]
             if invite.get('used'):
-                return render_template('signup.html', error="Invite ja foi utilizado")
+                return render_template('signup.html', error="Invite já foi utilizado",
+                                       invite_code=invite_code)
             if invite.get('expires'):
                 if datetime.fromisoformat(invite['expires']) < datetime.now():
-                    return render_template('signup.html', error="Invite expirado")
+                    return render_template('signup.html', error="Invite expirado",
+                                           invite_code=invite_code)
 
             users[username] = {
                 'password_hash': hash_password(password),
@@ -370,17 +453,7 @@ def signup():
                 'created': datetime.now().isoformat(),
                 'uploads': 0,
                 'status': 'approved',
-                'permissions': {
-                    'is_admin': False,
-                    'can_create_invites': False,
-                    'invite_count': 0,
-                    'file_lifetime': ['0'],
-                    'can_change_title': True,
-                    'can_use_hashbin': False,
-                    'hashbin_lifetime': ['0'],
-                    'can_change_password': True,
-                    'can_choose_embed_color': True,
-                }
+                'permissions': DEFAULT_PERMISSIONS.copy()
             }
             invites[invite_code]['used'] = True
             invites[invite_code]['used_by'] = username
@@ -402,7 +475,7 @@ def signup():
             save_json('users.json', users)
             return render_template('signup_success.html')
 
-    return render_template('signup.html')
+    return render_template('signup.html', invite_code=request.args.get('invite', ''))
 
 
 @app.route('/logout')
@@ -432,15 +505,18 @@ def index():
         can_choose_embed_color=perms.get('can_choose_embed_color', False),
         can_change_title=perms.get('can_change_title', True),
         can_use_hashbin=perms.get('can_use_hashbin', False),
+        can_create_invites=perms.get('can_create_invites', False),
+        file_lifetime_options=FILE_LIFETIME_OPTIONS,
+        allowed_lifetimes=perms.get('file_lifetime', ['0']),
     )
 
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'username' not in session:
-        return abort(401, "Nao autorizado")
+        return abort(401, "Não autorizado")
     if not is_approved():
-        return abort(403, "Conta nao aprovada")
+        return abort(403, "Conta não aprovada")
 
     username = session['username']
     can_upload, message = check_rate_limit(username)
@@ -457,19 +533,28 @@ def upload_file():
     users = load_users()
     user = users.get(username, {})
     perms = user.get('permissions', {})
-    allow_video = True
 
-    is_safe, error_msg = is_safe_file(file_content, filename, allow_video)
+    is_safe, error_msg = is_safe_file(file_content, filename, allow_video=True)
     if not is_safe:
         return "Arquivo rejeitado: %s" % error_msg, 400
 
-    title = request.form.get('title', '').strip() or 'Arquivo'
+    title = sanitize_text(request.form.get('title', '').strip()) or 'Arquivo'
     description = request.form.get('description', '').strip() or ''
     embed_color = request.form.get('embed_color', '#0070f3')
     file_lifetime = request.form.get('file_lifetime', '0')
 
+    if not is_valid_color(embed_color):
+        embed_color = '#0070f3'
+
     if not perms.get('can_change_title', True):
         title = 'Arquivo'
+
+    if not perms.get('can_choose_embed_color', True):
+        embed_color = '#0070f3'
+
+    allowed_lifetimes = perms.get('file_lifetime', ['0'])
+    if file_lifetime not in allowed_lifetimes:
+        file_lifetime = allowed_lifetimes[0] if allowed_lifetimes else '0'
 
     ext = os.path.splitext(secure_filename(filename))[1].lower()
     random_name = secrets.token_hex(16) + ext
@@ -506,7 +591,6 @@ def upload_file():
         'upload_time': datetime.now().isoformat(),
         'views': 0,
         'embed_color': embed_color,
-        'anonymous': False,
         'file_size': len(file_content),
         'expire_at': expire_at,
         'file_lifetime': file_lifetime,
@@ -518,7 +602,7 @@ def upload_file():
     users[username]['uploads'] = users[username].get('uploads', 0) + 1
     save_json('users.json', users)
 
-    return "Upload concluido: %s/s/%s" % (DOMAIN, short_id)
+    return "Upload concluído: %s/s/%s" % (DOMAIN, short_id)
 
 
 # ---------------------------------------------------------------------------
@@ -532,7 +616,7 @@ def short_url(short_id):
 
     short_urls = load_json('short_urls.json')
     if actual_id not in short_urls:
-        return abort(404, "URL nao encontrada")
+        return abort(404, "URL não encontrada")
 
     data = short_urls[actual_id]
 
@@ -547,7 +631,7 @@ def short_url(short_id):
 
     filepath = os.path.join(UPLOAD_FOLDER, data['filename'])
     if not os.path.exists(filepath):
-        return abort(404, "Arquivo nao encontrado")
+        return abort(404, "Arquivo não encontrado")
 
     short_urls[actual_id]['views'] = data.get('views', 0) + 1
     save_json('short_urls.json', short_urls)
@@ -560,7 +644,7 @@ def short_url(short_id):
 
 
 def _build_info_page(data, actual_id):
-    upload_date = datetime.fromisoformat(data['upload_time']).strftime('%d/%m/%Y as %H:%M')
+    upload_date = datetime.fromisoformat(data['upload_time']).strftime('%d/%m/%Y às %H:%M')
     file_size = "%.2f MB" % (data.get('file_size', 0) / 1024 / 1024)
     is_video = data['filename'].lower().endswith(VIDEO_EXTENSIONS)
     embed_color = data.get('embed_color', '#0070f3')
@@ -655,25 +739,25 @@ def hashbin():
     if 'username' not in session:
         return redirect(url_for('login'))
     if not is_approved():
-        return abort(403, "Conta nao aprovada")
+        return abort(403, "Conta não aprovada")
     perms = get_user_perms(session['username'])
     if not perms.get('can_use_hashbin', False):
-        return abort(403, "Sem permissao para usar HashBin")
+        return abort(403, "Sem permissão para usar HashBin")
     return render_template('hashbin.html')
 
 
 @app.route('/hashbin/create', methods=['POST'])
 def hashbin_create():
     if 'username' not in session:
-        return jsonify({'error': 'Nao autorizado'})
+        return jsonify({'error': 'Não autorizado'})
     if not is_approved():
-        return jsonify({'error': 'Conta nao aprovada'})
+        return jsonify({'error': 'Conta não aprovada'})
     perms = get_user_perms(session['username'])
     if not perms.get('can_use_hashbin', False):
-        return jsonify({'error': 'Sem permissao para usar HashBin'})
+        return jsonify({'error': 'Sem permissão para usar HashBin'})
 
     content = request.form.get('content', '').strip()
-    title = sanitize_text(request.form.get('title', 'Paste sem titulo'))
+    title = sanitize_text(request.form.get('title', 'Paste sem título'))
     syntax = request.form.get('syntax', 'text')
     try:
         expiry = int(request.form.get('expiry', 0) or 0)
@@ -681,16 +765,16 @@ def hashbin_create():
         expiry = 0
 
     if not content:
-        return jsonify({'error': 'Conteudo e obrigatorio'})
+        return jsonify({'error': 'Conteúdo é obrigatório'})
     if len(content.encode('utf-8')) > 30 * 1024 * 1024:
-        return jsonify({'error': 'Conteudo muito grande (maximo 30MB)'})
+        return jsonify({'error': 'Conteúdo muito grande (máximo 30MB)'})
 
     allowed_lifetimes = perms.get('hashbin_lifetime', ['0'])
     if str(expiry) not in allowed_lifetimes and expiry != 0:
         expiry = 0
 
     paste_id = secrets.token_urlsafe(10)
-    paste_file = os.path.join(TOOLS_FOLDER, '%s.txt' % paste_id)
+    paste_file = os.path.join(HASHBIN_FOLDER, '%s.txt' % paste_id)
     with open(paste_file, 'w', encoding='utf-8') as f:
         f.write(content)
 
@@ -713,14 +797,14 @@ def hashbin_create():
 def view_paste(paste_id):
     pastes = load_json('pastes.json')
     if paste_id not in pastes:
-        return abort(404, "Paste nao encontrado")
+        return abort(404, "Paste não encontrado")
 
     paste_data = pastes[paste_id]
 
     if paste_data.get('expires'):
         expire_time = datetime.fromisoformat(paste_data['expires'])
         if datetime.now() > expire_time:
-            paste_file = os.path.join(TOOLS_FOLDER, '%s.txt' % paste_id)
+            paste_file = os.path.join(HASHBIN_FOLDER, '%s.txt' % paste_id)
             if os.path.exists(paste_file):
                 os.remove(paste_file)
             del pastes[paste_id]
@@ -730,17 +814,17 @@ def view_paste(paste_id):
     pastes[paste_id]['views'] = paste_data.get('views', 0) + 1
     save_json('pastes.json', pastes)
 
-    paste_file = os.path.join(TOOLS_FOLDER, '%s.txt' % paste_id)
+    paste_file = os.path.join(HASHBIN_FOLDER, '%s.txt' % paste_id)
     try:
         with open(paste_file, 'r', encoding='utf-8') as f:
             content = f.read()
     except FileNotFoundError:
-        return abort(404, "Arquivo nao encontrado")
+        return abort(404, "Arquivo não encontrado")
 
-    created_date = datetime.fromisoformat(paste_data['created']).strftime('%d/%m/%Y as %H:%M')
+    created_date = datetime.fromisoformat(paste_data['created']).strftime('%d/%m/%Y às %H:%M')
     expires_text = (
         "Nunca" if not paste_data.get('expires')
-        else datetime.fromisoformat(paste_data['expires']).strftime('%d/%m/%Y as %H:%M')
+        else datetime.fromisoformat(paste_data['expires']).strftime('%d/%m/%Y às %H:%M')
     )
     safe_content = content.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
@@ -761,59 +845,158 @@ def view_paste(paste_id):
 def view_paste_raw(paste_id):
     pastes = load_json('pastes.json')
     if paste_id not in pastes:
-        return abort(404, "Paste nao encontrado")
-    paste_file = os.path.join(TOOLS_FOLDER, '%s.txt' % paste_id)
+        return abort(404, "Paste não encontrado")
+    paste_file = os.path.join(HASHBIN_FOLDER, '%s.txt' % paste_id)
     try:
         with open(paste_file, 'r', encoding='utf-8') as f:
             content = f.read()
         return content, 200, {'Content-Type': 'text/plain; charset=utf-8'}
     except FileNotFoundError:
-        return abort(404, "Arquivo nao encontrado")
+        return abort(404, "Arquivo não encontrado")
 
 
 # ---------------------------------------------------------------------------
-# Routes — Change Password
+# Routes — Account Settings
+# ---------------------------------------------------------------------------
+@app.route('/account', methods=['GET', 'POST'])
+def account():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    if not is_approved():
+        session.clear()
+        return redirect(url_for('login'))
+
+    username = session['username']
+    users = load_users()
+    user = users.get(username, {})
+    perms = user.get('permissions', {})
+    error = None
+    success = None
+
+    if request.method == 'POST':
+        action = request.form.get('action', '')
+
+        if action == 'update_email':
+            new_email = sanitize_text(request.form.get('email', '').strip())
+            if not new_email or '@' not in new_email:
+                error = "Email inválido"
+            else:
+                for u in users.values():
+                    if u.get('email') == new_email and u != user:
+                        error = "Email já está em uso"
+                        break
+                if not error:
+                    users[username]['email'] = new_email
+                    save_json('users.json', users)
+                    success = "Email atualizado com sucesso"
+
+        elif action == 'change_password':
+            current_password = request.form.get('current_password', '')
+            new_password = request.form.get('new_password', '')
+            confirm_password = request.form.get('confirm_password', '')
+
+            if not perms.get('can_change_password', False):
+                error = "Sem permissão para alterar senha"
+            elif not current_password or not new_password or not confirm_password:
+                error = "Todos os campos são obrigatórios"
+            elif not check_password(current_password, user['password_hash']):
+                error = "Senha atual incorreta"
+            elif new_password != confirm_password:
+                error = "Senhas não coincidem"
+            elif len(new_password) < 6:
+                error = "Nova senha deve ter pelo menos 6 caracteres"
+            else:
+                users[username]['password_hash'] = hash_password(new_password)
+                save_json('users.json', users)
+                success = "Senha alterada com sucesso"
+
+        elif action == 'generate_invite':
+            if not perms.get('can_create_invites', False):
+                error = "Você não tem permissão para criar convites"
+            else:
+                invite_count = perms.get('invite_count', 0)
+                if invite_count == 0:
+                    error = "Limite de invites atingido"
+                else:
+                    invites = load_json('invites.json')
+                    code = generate_invite_code()
+                    while code in invites:
+                        code = generate_invite_code()
+                    invites[code] = {
+                        'created_by': username,
+                        'created_at': datetime.now().isoformat(),
+                        'used': False,
+                        'used_by': None,
+                        'expires': None,
+                    }
+                    save_json('invites.json', invites)
+                    if invite_count > 0:
+                        users[username]['permissions']['invite_count'] = max(0, invite_count - 1)
+                        save_json('users.json', users)
+                    success = "Convite criado"
+
+        elif action == 'delete_invite':
+            code = request.form.get('code', '')
+            invites = load_json('invites.json')
+            if code in invites and invites[code].get('created_by') == username:
+                del invites[code]
+                save_json('invites.json', invites)
+                success = "Convite removido"
+
+        elif action == 'delete_file':
+            short_id = request.form.get('short_id', '')
+            short_urls = load_json('short_urls.json')
+            if short_id in short_urls and short_urls[short_id].get('username') == username:
+                filepath = os.path.join(UPLOAD_FOLDER, short_urls[short_id]['filename'])
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                del short_urls[short_id]
+                save_json('short_urls.json', short_urls)
+                users = load_users()
+                users[username]['uploads'] = max(0, users[username].get('uploads', 0) - 1)
+                save_json('users.json', users)
+                success = "Arquivo removido"
+
+        users = load_users()
+        user = users.get(username, {})
+        perms = user.get('permissions', {})
+
+    invites = load_json('invites.json')
+    user_invites = {k: v for k, v in invites.items() if v.get('created_by') == username}
+
+    short_urls = load_json('short_urls.json')
+    user_files = []
+    for sid, data in short_urls.items():
+        if data.get('username') == username:
+            user_files.append({
+                'short_id': sid,
+                'title': data.get('title', 'Arquivo'),
+                'original_filename': data.get('original_filename', ''),
+                'upload_time': data.get('upload_time', ''),
+                'views': data.get('views', 0),
+                'expire_at': data.get('expire_at'),
+            })
+    user_files.sort(key=lambda x: x['upload_time'], reverse=True)
+
+    return render_template(
+        'account.html',
+        username=username,
+        email=user.get('email', ''),
+        perms=perms,
+        invites=user_invites,
+        user_files=user_files,
+        DOMAIN=DOMAIN,
+        error=error,
+        success=success,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Routes — Change Password (redirects to account)
 # ---------------------------------------------------------------------------
 @app.route('/change_password', methods=['GET', 'POST'])
 def change_password():
-    if 'username' not in session:
-        return abort(401, "Nao autorizado")
-    if not is_approved():
-        return abort(403, "Conta nao aprovada")
-    users = load_users()
-    user = users.get(session['username'], {})
-    if not user.get('permissions', {}).get('can_change_password', False):
-        return abort(403, "Sem permissao para alterar senha")
-
-    if request.method == 'POST':
-        current_password = request.form.get('current_password', '')
-        new_password = request.form.get('new_password', '')
-        confirm_password = request.form.get('confirm_password', '')
-
-        if not current_password or not new_password or not confirm_password:
-            return render_template('message.html', type='error',
-                                   message="Todos os campos sao obrigatorios.",
-                                   back_url='/change_password', back_text='Tentar novamente')
-        if not check_password(current_password, user['password_hash']):
-            return render_template('message.html', type='error',
-                                   message="Senha atual incorreta.",
-                                   back_url='/change_password', back_text='Tentar novamente')
-        if new_password != confirm_password:
-            return render_template('message.html', type='error',
-                                   message="Senhas nao coincidem.",
-                                   back_url='/change_password', back_text='Tentar novamente')
-        if len(new_password) < 6:
-            return render_template('message.html', type='error',
-                                   message="Nova senha deve ter pelo menos 6 caracteres.",
-                                   back_url='/change_password', back_text='Tentar novamente')
-
-        users[session['username']]['password_hash'] = hash_password(new_password)
-        save_json('users.json', users)
-        return render_template('message.html', type='success',
-                               message="Senha alterada com sucesso.",
-                               back_url='/dashboard', back_text='Voltar ao painel')
-
-    return render_template('change_password.html')
+    return redirect(url_for('account'))
 
 
 # ---------------------------------------------------------------------------
@@ -853,7 +1036,6 @@ def admin_panel():
 
     return render_template(
         'admin.html',
-        users=users,
         pending_users=pending_users,
         approved_users=approved_users,
         total_files=len(short_urls),
@@ -862,11 +1044,10 @@ def admin_panel():
         total_views=total_views,
         top_users=top_users_data,
         invites=invites,
-        file_lifetime_options=FILE_LIFETIME_OPTIONS,
     )
 
 
-@app.route('/admin/approve_user/<username>')
+@app.route('/admin/approve_user/<username>', methods=['POST'])
 def approve_user(username):
     if not is_admin_user():
         return abort(403, "Acesso negado")
@@ -877,7 +1058,7 @@ def approve_user(username):
     return redirect('/admin')
 
 
-@app.route('/admin/reject_user/<username>')
+@app.route('/admin/reject_user/<username>', methods=['POST'])
 def reject_user(username):
     if not is_admin_user():
         return abort(403, "Acesso negado")
@@ -888,7 +1069,7 @@ def reject_user(username):
     return redirect('/admin')
 
 
-@app.route('/admin/delete_user/<username>')
+@app.route('/admin/delete_user/<username>', methods=['POST'])
 def delete_user(username):
     if not is_admin_user():
         return abort(403, "Acesso negado")
@@ -904,25 +1085,24 @@ def create_user():
     if not is_admin_user():
         return abort(403, "Acesso negado")
 
+    error = None
+
     if request.method == 'POST':
         new_username = sanitize_text(request.form.get('username', '').strip())
         new_password = request.form.get('password', '').strip()
         new_email = sanitize_text(request.form.get('email', '').strip())
 
         if not new_username or not new_password or not new_email:
-            return render_template('message.html', type='error',
-                                   message="Usuario, email e senha sao obrigatorios.",
-                                   back_url='/admin/create_user', back_text='Tentar novamente')
-        if len(new_password) < 6:
-            return render_template('message.html', type='error',
-                                   message="Senha deve ter pelo menos 6 caracteres.",
-                                   back_url='/admin/create_user', back_text='Tentar novamente')
+            error = "Usuário, email e senha são obrigatórios."
+        elif len(new_password) < 6:
+            error = "Senha deve ter pelo menos 6 caracteres."
+        else:
+            users = load_users()
+            if new_username in users:
+                error = "Usuário já existe."
 
-        users = load_users()
-        if new_username in users:
-            return render_template('message.html', type='error',
-                                   message="Usuario ja existe.",
-                                   back_url='/admin/create_user', back_text='Tentar novamente')
+        if error:
+            return render_template('create_user.html', error=error, file_lifetime_options=FILE_LIFETIME_OPTIONS)
 
         is_admin_perm = 'is_admin' in request.form
         can_create_invites = 'can_create_invites' in request.form
@@ -971,7 +1151,7 @@ def create_user():
         save_json('users.json', users)
 
         return render_template('message.html', type='success',
-                               message="Usuario '%s' criado com sucesso." % new_username,
+                               message="Usuário '%s' criado com sucesso." % new_username,
                                back_url='/admin', back_text='Voltar ao admin')
 
     return render_template('create_user.html', file_lifetime_options=FILE_LIFETIME_OPTIONS)
@@ -985,14 +1165,17 @@ def edit_user(username):
     if username not in users:
         return redirect('/admin')
 
+    error = None
+    success = None
+
     if request.method == 'POST':
-        is_admin_perm = 'is_admin' in request.form
-        can_create_invites = 'can_create_invites' in request.form
+        is_admin_perm = request.form.get('is_admin') == '1'
+        can_create_invites = request.form.get('can_create_invites') == '1'
         invite_count = int(request.form.get('invite_count', 0) or 0)
-        can_change_title = 'can_change_title' in request.form
-        can_use_hashbin = 'can_use_hashbin' in request.form
-        can_change_password = 'can_change_password' in request.form
-        can_choose_embed_color = 'can_choose_embed_color' in request.form
+        can_change_title = request.form.get('can_change_title') == '1'
+        can_use_hashbin = request.form.get('can_use_hashbin') == '1'
+        can_change_password = request.form.get('can_change_password') == '1'
+        can_choose_embed_color = request.form.get('can_choose_embed_color') == '1'
         file_lifetime = request.form.getlist('file_lifetime') or ['0']
         hashbin_lifetime = request.form.getlist('hashbin_lifetime') or ['0']
 
@@ -1015,20 +1198,22 @@ def edit_user(username):
 
         users[username]['permissions'] = permissions
         save_json('users.json', users)
-        return redirect('/admin')
+        success = "Permissões atualizadas com sucesso"
 
     return render_template(
         'edit_user.html',
         username=username,
         user=users[username],
         file_lifetime_options=FILE_LIFETIME_OPTIONS,
+        error=error,
+        success=success,
     )
 
 
 @app.route('/admin/generate_invite', methods=['POST'])
 def generate_invite():
     if not is_admin_user():
-        return jsonify({'error': 'Sem permissao'})
+        return jsonify({'error': 'Sem permissão'})
 
     users = load_users()
     admin_user = users.get(session['username'], {})
@@ -1066,7 +1251,7 @@ def generate_invite():
     return jsonify({'success': True, 'invites': created})
 
 
-@app.route('/admin/delete_invite/<code>')
+@app.route('/admin/delete_invite/<code>', methods=['POST'])
 def delete_invite(code):
     if not is_admin_user():
         return abort(403, "Acesso negado")
@@ -1074,14 +1259,6 @@ def delete_invite(code):
     if code in invites:
         del invites[code]
         save_json('invites.json', invites)
-    return redirect('/admin')
-
-
-@app.route('/admin/cleanup')
-def manual_cleanup():
-    if not is_admin_user():
-        return abort(403, "Acesso negado")
-    cleanup_anonymous_files()
     return redirect('/admin')
 
 
@@ -1094,7 +1271,7 @@ DEPLOY_TOKEN = os.environ.get("DEPLOY_TOKEN", "hashhost-deploy-2024")
 def deploy_webhook():
     token = request.headers.get('X-Deploy-Token') or request.args.get('token')
     if token != DEPLOY_TOKEN:
-        return abort(403, "Token invalido")
+        return abort(403, "Token inválido")
     try:
         home = os.path.expanduser('~')
         subprocess.Popen(

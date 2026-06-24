@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <title>HashHost - Editar usuario</title>
+  <title>HashHost - Editar usuário</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -15,25 +15,31 @@
 
     <div class="card reveal-scale">
       <h2 style="margin-bottom:24px">Editar: {{ username }}</h2>
+      {% if error %}
+      <div class="error" style="margin-bottom:16px">{{ error }}</div>
+      {% endif %}
+      {% if success %}
+      <div class="success" style="margin-bottom:16px">{{ success }}</div>
+      {% endif %}
       <form method="POST">
         <div class="grid" style="grid-template-columns:1fr 1fr;gap:12px 20px">
           <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
-            <input type="checkbox" name="is_admin" id="is_admin" {% if user.permissions.is_admin %}checked{% endif %}> Admin
+            <input type="checkbox" name="is_admin" id="is_admin" value="1" {% if user.permissions.is_admin %}checked{% endif %}> Admin
           </label>
           <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
-            <input type="checkbox" name="can_create_invites" id="can_create_invites" {% if user.permissions.can_create_invites %}checked{% endif %}> Criar invites
+            <input type="checkbox" name="can_create_invites" id="can_create_invites" value="1" {% if user.permissions.can_create_invites %}checked{% endif %}> Criar invites
           </label>
           <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
-            <input type="checkbox" name="can_change_title" class="perm-cb" {% if user.permissions.can_change_title %}checked{% endif %}> Alterar titulo
+            <input type="checkbox" name="can_change_title" class="perm-cb" value="1" {% if user.permissions.can_change_title %}checked{% endif %}> Alterar título
           </label>
           <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
-            <input type="checkbox" name="can_use_hashbin" id="can_use_hashbin" class="perm-cb" {% if user.permissions.can_use_hashbin %}checked{% endif %}> HashBin
+            <input type="checkbox" name="can_use_hashbin" id="can_use_hashbin" class="perm-cb" value="1" {% if user.permissions.can_use_hashbin %}checked{% endif %}> HashBin
           </label>
           <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
-            <input type="checkbox" name="can_change_password" class="perm-cb" {% if user.permissions.can_change_password %}checked{% endif %}> Alterar senha
+            <input type="checkbox" name="can_change_password" class="perm-cb" value="1" {% if user.permissions.can_change_password %}checked{% endif %}> Alterar senha
           </label>
           <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
-            <input type="checkbox" name="can_choose_embed_color" class="perm-cb" {% if user.permissions.can_choose_embed_color %}checked{% endif %}> Cor do embed
+            <input type="checkbox" name="can_choose_embed_color" class="perm-cb" value="1" {% if user.permissions.can_choose_embed_color %}checked{% endif %}> Cor do embed
           </label>
         </div>
 
@@ -45,28 +51,28 @@
         </div>
 
         <div class="form-group" style="margin-top:16px">
-          <label>Vida util dos arquivos</label>
+          <label>Vida útil dos arquivos</label>
           <select name="file_lifetime" multiple size="4" style="height:auto">
             {% for opt in file_lifetime_options %}
             <option value="{{ opt.value }}" {% if opt.value in user.permissions.file_lifetime %}selected{% endif %}>{{ opt.label }}</option>
             {% endfor %}
           </select>
-          <p style="color:var(--text2);font-size:11px;margin-top:4px">Segure Ctrl para selecionar multiplas opcoes</p>
+          <p style="color:var(--text2);font-size:11px;margin-top:4px">Segure Ctrl para selecionar múltiplas opções</p>
         </div>
 
         <div id="hashbinLifetimeGroup" style="{% if not user.permissions.can_use_hashbin %}display:none{% endif %}">
           <div class="form-group">
-            <label>Vida util do HashBin</label>
+            <label>Vida útil do HashBin</label>
             <select name="hashbin_lifetime" multiple size="4" style="height:auto">
               {% for opt in file_lifetime_options %}
               <option value="{{ opt.value }}" {% if opt.value in user.permissions.hashbin_lifetime %}selected{% endif %}>{{ opt.label }}</option>
               {% endfor %}
             </select>
-            <p style="color:var(--text2);font-size:11px;margin-top:4px">Segure Ctrl para selecionar multiplas opcoes</p>
+            <p style="color:var(--text2);font-size:11px;margin-top:4px">Segure Ctrl para selecionar múltiplas opções</p>
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px">Salvar alteracoes</button>
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px">Salvar alterações</button>
       </form>
     </div>
   </div>
@@ -108,7 +114,8 @@
     hashbinCb.addEventListener('change', updateHashbin);
     updateAdmin();
   </script>
+
+  <script src="/static/wavy-canvas.js"></script>
+  <script src="/static/animations.js"></script>
 </body>
-<script src="/static/wavy-canvas.js"></script>
-<script src="/static/animations.js"></script>
 </html>

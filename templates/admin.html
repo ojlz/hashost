@@ -44,10 +44,9 @@
 <body>
   <div class="container">
     <div class="header">
-      <a href="/dashboard" class="logo glitch" data-text="HHost">H<span>Host</span></a>
+      <a href="/admin" class="logo glitch" data-text="HHost">H<span>Host</span></a>
       <div class="nav">
-        <a href="/admin/create_user" class="btn btn-primary btn-sm">Novo usuario</a>
-        <a href="/admin/cleanup" class="btn btn-secondary btn-sm">Limpar anonimos</a>
+        <a href="/admin/create_user" class="btn btn-primary btn-sm">Novo usuário</a>
         <a href="/dashboard" class="btn btn-ghost btn-sm">Voltar</a>
       </div>
     </div>
@@ -61,21 +60,21 @@
       </div>
       <div class="card stat-card">
         <div class="stat">{{ total_users }}</div>
-        <div class="stat-label">Usuarios</div>
+        <div class="stat-label">Usuários</div>
       </div>
       <div class="card stat-card">
         <div class="stat">{{ total_size_mb }} MB</div>
-        <div class="stat-label">Espaco usado</div>
+        <div class="stat-label">Espaço usado</div>
       </div>
       <div class="card stat-card">
         <div class="stat">{{ total_views }}</div>
-        <div class="stat-label">Visualizacoes</div>
+        <div class="stat-label">Visualizações</div>
       </div>
     </div>
 
     {% if pending_users %}
     <div class="card" style="margin-top:16px">
-      <h2 style="margin-bottom:16px">Usuarios pendentes</h2>
+      <h2 style="margin-bottom:16px">Usuários pendentes</h2>
       {% for username, user in pending_users.items() %}
       <div class="user-item">
         <div>
@@ -84,9 +83,13 @@
           <span style="color:var(--text2);font-size:12px;margin-left:8px">{{ user.email }}</span>
         </div>
         <div class="user-actions">
-          <a href="/admin/approve_user/{{ username }}" class="btn btn-primary btn-sm">Aprovar</a>
-          <a href="/admin/reject_user/{{ username }}" class="btn btn-danger btn-sm"
-             onclick="return confirm('Rejeitar {{ username }}?')">Rejeitar</a>
+          <form method="POST" action="/admin/approve_user/{{ username }}" style="display:inline">
+            <button type="submit" class="btn btn-primary btn-sm">Aprovar</button>
+          </form>
+          <form method="POST" action="/admin/reject_user/{{ username }}" style="display:inline"
+                onsubmit="return confirm('Rejeitar {{ username }}?')">
+            <button type="submit" class="btn btn-danger btn-sm">Rejeitar</button>
+          </form>
         </div>
       </div>
       {% endfor %}
@@ -94,7 +97,7 @@
     {% endif %}
 
     <div class="card" style="margin-top:16px">
-      <h2 style="margin-bottom:16px">Usuarios</h2>
+      <h2 style="margin-bottom:16px">Usuários</h2>
       {% for username, user in approved_users.items() %}
       <div class="user-item">
         <div>
@@ -107,8 +110,10 @@
         </div>
         <div class="user-actions">
           <a href="/admin/edit_user/{{ username }}" class="btn btn-secondary btn-sm">Editar</a>
-          <a href="/admin/delete_user/{{ username }}" class="btn btn-danger btn-sm"
-             onclick="return confirm('Remover {{ username }}?')">Remover</a>
+          <form method="POST" action="/admin/delete_user/{{ username }}" style="display:inline"
+                onsubmit="return confirm('Remover {{ username }}?')">
+            <button type="submit" class="btn btn-danger btn-sm">Remover</button>
+          </form>
         </div>
       </div>
       {% endfor %}
@@ -125,18 +130,23 @@
       {% if invites %}
         {% for code, invite in invites.items() %}
         <div class="invite-item">
-          <div>
-            <span class="invite-code">{{ code }}</span>
-            {% if invite.used %}
-            <span class="badge approved-badge" style="margin-left:8px">Usado por {{ invite.used_by }}</span>
-            {% else %}
-            <span class="badge" style="margin-left:8px">Disponivel</span>
-            {% endif %}
-            <span style="color:var(--text2);font-size:11px;margin-left:8px">por {{ invite.created_by }}</span>
+          <div style="flex:1;min-width:0">
+            <div class="invite-code">{{ code }}</div>
+            <div style="font-family:monospace;font-size:11px;color:var(--text2);margin-top:2px;word-break:break-all">/iv/{{ code }}</div>
+            <div style="margin-top:4px">
+              {% if invite.used %}
+              <span class="badge approved-badge" style="margin-left:0">Usado por {{ invite.used_by }}</span>
+              {% else %}
+              <span class="badge" style="margin-left:0">Disponível</span>
+              {% endif %}
+              <span style="color:var(--text2);font-size:11px;margin-left:8px">por {{ invite.created_by }}</span>
+            </div>
           </div>
           {% if not invite.used %}
-          <a href="/admin/delete_invite/{{ code }}" class="btn btn-danger btn-sm"
-             onclick="return confirm('Remover invite?')">Remover</a>
+          <form method="POST" action="/admin/delete_invite/{{ code }}" style="display:inline"
+                onsubmit="return confirm('Remover invite?')">
+            <button type="submit" class="btn btn-danger btn-sm">Remover</button>
+          </form>
           {% endif %}
         </div>
         {% endfor %}
@@ -150,7 +160,7 @@
       <table class="table">
         <thead>
           <tr>
-            <th>Usuario</th>
+            <th>Usuário</th>
             <th>Envios</th>
             <th>Tamanho</th>
           </tr>
@@ -185,7 +195,8 @@
       }
     });
   </script>
+
+  <script src="/static/wavy-canvas.js"></script>
+  <script src="/static/animations.js"></script>
 </body>
-<script src="/static/wavy-canvas.js"></script>
-<script src="/static/animations.js"></script>
 </html>

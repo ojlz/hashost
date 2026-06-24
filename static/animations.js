@@ -12,6 +12,7 @@
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
           entry.target.classList.add('active');
+          observer.unobserve(entry.target);
         }
       });
     }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
@@ -45,8 +46,9 @@
       entries.forEach(function (entry) {
         if (entry.isIntersecting && !entry.target.dataset.counted) {
           entry.target.dataset.counted = 'true';
+          observer.unobserve(entry.target);
           var text = entry.target.textContent.trim();
-          var num = parseInt(text);
+          var num = parseInt(text, 10);
           if (!isNaN(num) && num > 0) {
             animateCounter(entry.target, num);
           }
@@ -63,6 +65,7 @@
   function initScrollProgress() {
     var bar = document.createElement('div');
     bar.className = 'scroll-progress';
+    bar.setAttribute('aria-hidden', 'true');
     bar.style.width = '0%';
     document.body.appendChild(bar);
 
@@ -134,11 +137,12 @@
   function initSmoothScroll() {
     document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
       anchor.addEventListener('click', function (e) {
-        var target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-          e.preventDefault();
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        var target = this.getAttribute('href');
+        if (!target || target === '#') return;
+        var el = document.querySelector(target);
+        if (!el) return;
+        e.preventDefault();
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     });
   }
@@ -150,12 +154,51 @@
     var form = document.getElementById('uploadForm');
     if (!form) return;
 
-    form.addEventListener('submit', function () {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
       var btn = form.querySelector('button[type="submit"]');
+      var originalText = '';
       if (btn) {
-        btn.dataset.originalText = btn.innerHTML;
+        originalText = btn.innerHTML;
         btn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:8px"></span> Enviando...';
         btn.disabled = true;
+      }
+
+      var timeout = setTimeout(function () {
+        if (btn) {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }
+      }, 30000);
+
+      try {
+        var formData = new FormData(form);
+        fetch(form.action || window.location.href, {
+          method: form.method || 'POST',
+          body: formData
+        }).then(function (response) {
+          clearTimeout(timeout);
+          if (!response.ok) {
+            if (btn) {
+              btn.innerHTML = originalText;
+              btn.disabled = false;
+            }
+          } else {
+            window.location.reload();
+          }
+        }).catch(function () {
+          clearTimeout(timeout);
+          if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+          }
+        });
+      } catch (err) {
+        clearTimeout(timeout);
+        if (btn) {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }
       }
     });
   }
@@ -164,7 +207,7 @@
      COPY BUTTON FEEDBACK
      ============================================================ */
   function initCopyFeedback() {
-    document.querySelectorAll('[onclick*="clipboard"]').forEach(function (btn) {
+    document.querySelectorAll('[onclick*="clipboard"], [data-copy]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var original = this.innerHTML;
         this.innerHTML = 'Copiado!';

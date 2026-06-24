@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <title>HashHost - Novo usuario</title>
+  <title>HashHost - Novo usuário</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -14,10 +14,13 @@
     </div>
 
     <div class="card reveal-scale">
-      <h2 style="margin-bottom:24px">Novo usuario</h2>
+      <h2 style="margin-bottom:24px">Novo usuário</h2>
+      {% if error %}
+      <div class="error" style="margin-bottom:16px">{{ error }}</div>
+      {% endif %}
       <form method="POST">
         <div class="form-group">
-          <label>Nome de usuario</label>
+          <label>Nome de usuário</label>
           <input type="text" name="username" required maxlength="50" placeholder="nome-do-usuario">
         </div>
         <div class="form-group">
@@ -38,7 +41,7 @@
             <input type="checkbox" name="can_create_invites" id="can_create_invites"> Criar invites
           </label>
           <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
-            <input type="checkbox" name="can_change_title" checked> Alterar titulo
+            <input type="checkbox" name="can_change_title" checked> Alterar título
           </label>
           <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
             <input type="checkbox" name="can_use_hashbin" id="can_use_hashbin"> HashBin
@@ -59,28 +62,28 @@
         </div>
 
         <div class="form-group" style="margin-top:16px">
-          <label>Vida util dos arquivos</label>
+          <label>Vida útil dos arquivos</label>
           <select name="file_lifetime" multiple size="4" style="height:auto">
             {% for opt in file_lifetime_options %}
             <option value="{{ opt.value }}" {% if opt.value == '0' %}selected{% endif %}>{{ opt.label }}</option>
             {% endfor %}
           </select>
-          <p style="color:var(--text2);font-size:11px;margin-top:4px">Segure Ctrl para selecionar multiplas opcoes</p>
+          <p style="color:var(--text2);font-size:11px;margin-top:4px">Segure Ctrl para selecionar múltiplas opções</p>
         </div>
 
         <div id="hashbinLifetimeGroup" style="display:none;margin-top:16px">
           <div class="form-group">
-            <label>Vida util do HashBin</label>
+            <label>Vida útil do HashBin</label>
             <select name="hashbin_lifetime" multiple size="4" style="height:auto">
               {% for opt in file_lifetime_options %}
               <option value="{{ opt.value }}" {% if opt.value == '0' %}selected{% endif %}>{{ opt.label }}</option>
               {% endfor %}
             </select>
-            <p style="color:var(--text2);font-size:11px;margin-top:4px">Segure Ctrl para selecionar multiplas opcoes</p>
+            <p style="color:var(--text2);font-size:11px;margin-top:4px">Segure Ctrl para selecionar múltiplas opções</p>
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:24px">Criar usuario</button>
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:24px">Criar usuário</button>
       </form>
     </div>
   </div>
@@ -121,7 +124,8 @@
     hashbinCb.addEventListener('change', updateHashbin);
     updateAdmin();
   </script>
+
+  <script src="/static/wavy-canvas.js"></script>
+  <script src="/static/animations.js"></script>
 </body>
-<script src="/static/wavy-canvas.js"></script>
-<script src="/static/animations.js"></script>
 </html>

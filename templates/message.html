@@ -11,14 +11,15 @@
     <div style="width:100%;max-width:400px;text-align:center" class="reveal-scale">
       <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:12px;background:var(--accent);color:#fff;font-size:22px;font-weight:700;margin-bottom:24px">H</div>
       {% if type == 'error' %}
-      <div class="error">{{ message }}</div>
+      <div class="error" role="alert">{{ message }}</div>
       {% else %}
-      <div class="success">{{ message }}</div>
+      <div class="success" role="alert">{{ message }}</div>
       {% endif %}
       <a href="{{ back_url }}" class="btn btn-primary" style="margin-top:16px">{{ back_text }}</a>
     </div>
   </div>
+
+  <script src="/static/wavy-canvas.js"></script>
+  <script src="/static/animations.js"></script>
 </body>
-<script src="/static/wavy-canvas.js"></script>
-<script src="/static/animations.js"></script>
 </html>
