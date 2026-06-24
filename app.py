@@ -88,6 +88,7 @@ FILE_LIFETIME_OPTIONS = [
 
 DEFAULT_PERMISSIONS = {
     'is_admin': False,
+    'is_team': False,
     'can_create_invites': False,
     'invite_count': 0,
     'file_lifetime': ['0'],
@@ -96,6 +97,19 @@ DEFAULT_PERMISSIONS = {
     'hashbin_lifetime': ['0'],
     'can_change_password': True,
     'can_choose_embed_color': True,
+}
+
+MINIMAL_PERMISSIONS = {
+    'is_admin': False,
+    'is_team': False,
+    'can_create_invites': False,
+    'invite_count': 0,
+    'file_lifetime': ['0'],
+    'can_change_title': False,
+    'can_use_hashbin': False,
+    'hashbin_lifetime': ['0'],
+    'can_change_password': False,
+    'can_choose_embed_color': False,
 }
 
 # ---------------------------------------------------------------------------
@@ -144,6 +158,7 @@ def load_users():
                 "status": "approved",
                 "permissions": {
                     "is_admin": True,
+                    "is_team": True,
                     "can_create_invites": True,
                     "invite_count": -1,
                     "file_lifetime": ["0"],
@@ -152,7 +167,8 @@ def load_users():
                     "hashbin_lifetime": ["0"],
                     "can_change_password": True,
                     "can_choose_embed_color": True,
-                }
+                },
+                "profile": {}
             }
         }
         save_json('users.json', users)
@@ -167,6 +183,12 @@ def load_users():
                 migrated = True
             if 'uploads' not in user:
                 user['uploads'] = 0
+                migrated = True
+            if 'is_team' not in user.get('permissions', {}):
+                user.setdefault('permissions', {}).update({'is_team': False})
+                migrated = True
+            if 'profile' not in user:
+                user['profile'] = {}
                 migrated = True
         if migrated:
             save_json('users.json', users)
@@ -459,19 +481,34 @@ def signup():
             if invite.get('used'):
                 return render_template('signup.html', error="Invite já foi utilizado",
                                        invite_code=invite_code)
+            max_uses = invite.get('max_uses', 1)
+            use_count = invite.get('use_count', 0)
+            if max_uses > 0 and use_count >= max_uses:
+                return render_template('signup.html', error="Invite atingiu o limite de usos",
+                                       invite_code=invite_code)
             if invite.get('expires'):
                 if datetime.fromisoformat(invite['expires']) < datetime.now():
                     return render_template('signup.html', error="Invite expirado",
                                            invite_code=invite_code)
+
+            invite_perms = invites[invite_code].get('permissions')
+            if invite_perms:
+                user_permissions = invite_perms.copy()
+            else:
+                user_permissions = MINIMAL_PERMISSIONS.copy()
 
             users[username] = {
                 'password_hash': hash_password(password),
                 'created': datetime.now().isoformat(),
                 'uploads': 0,
                 'status': 'approved',
-                'permissions': DEFAULT_PERMISSIONS.copy()
+                'permissions': user_permissions,
+                'profile': {},
             }
-            invites[invite_code]['used'] = True
+            invites[invite_code]['use_count'] = invites[invite_code].get('use_count', 0) + 1
+            max_uses = invites[invite_code].get('max_uses', 1)
+            if max_uses > 0 and invites[invite_code]['use_count'] >= max_uses:
+                invites[invite_code]['used'] = True
             invites[invite_code]['used_by'] = username
             save_json('invites.json', invites)
             save_json('users.json', users)
@@ -485,7 +522,8 @@ def signup():
                 'created': datetime.now().isoformat(),
                 'uploads': 0,
                 'status': 'pending',
-                'permissions': DEFAULT_PERMISSIONS.copy()
+                'permissions': DEFAULT_PERMISSIONS.copy(),
+                'profile': {},
             }
             save_json('users.json', users)
             return render_template('signup_success.html')
@@ -662,7 +700,12 @@ def _build_info_page(data, actual_id):
     upload_date = datetime.fromisoformat(data['upload_time']).strftime('%d/%m/%Y às %H:%M')
     file_size = "%.2f MB" % (data.get('file_size', 0) / 1024 / 1024)
     is_video = data['filename'].lower().endswith(VIDEO_EXTENSIONS)
+    uploader = load_users().get(data.get('username', ''), {})
+    profile = uploader.get('profile', {})
+    profile_color = profile.get('color', '')
     embed_color = data.get('embed_color', '#0070f3')
+    if profile_color and is_valid_color(profile_color):
+        embed_color = profile_color
     proxy_url = "%s/proxy/%s" % (DOMAIN, data['filename'])
 
     if is_video:
@@ -690,6 +733,10 @@ def _build_info_page(data, actual_id):
         file_size=file_size,
         views=data.get('views', 0),
         file_type=data['filename'].split('.')[-1].upper(),
+        embed_author=profile.get('embed_author', ''),
+        embed_author_url=profile.get('embed_author_url', ''),
+        embed_footer=profile.get('embed_footer', ''),
+        avatar_url=profile.get('avatar_url', ''),
     )
 
 
@@ -699,7 +746,12 @@ def _build_embed_page(data, actual_id, filepath):
         width, height = max(width, 400), max(height, 300)
 
     is_video = data['filename'].lower().endswith(VIDEO_EXTENSIONS)
+    uploader = load_users().get(data.get('username', ''), {})
+    profile = uploader.get('profile', {})
+    profile_color = profile.get('color', '')
     embed_color = data.get('embed_color', '#0070f3')
+    if profile_color and is_valid_color(profile_color):
+        embed_color = profile_color
     proxy_url = "%s/proxy/%s" % (DOMAIN, data['filename'])
 
     if is_video:
@@ -728,6 +780,10 @@ def _build_embed_page(data, actual_id, filepath):
         media_html=media_html,
         info_link=info_link,
         raw_link=raw_link,
+        embed_author=profile.get('embed_author', ''),
+        embed_author_url=profile.get('embed_author_url', ''),
+        embed_footer=profile.get('embed_footer', ''),
+        avatar_url=profile.get('avatar_url', ''),
     )
 
     response = app.response_class(html, 200, mimetype='text/html; charset=utf-8')
@@ -923,12 +979,16 @@ def account():
                     code = generate_invite_code()
                     while code in invites:
                         code = generate_invite_code()
+                    max_uses = int(request.form.get('max_uses', 1) or 1)
                     invites[code] = {
                         'created_by': username,
                         'created_at': datetime.now().isoformat(),
                         'used': False,
                         'used_by': None,
                         'expires': None,
+                        'permissions': None,
+                        'max_uses': max_uses,
+                        'use_count': 0,
                     }
                     save_json('invites.json', invites)
                     if invite_count > 0:
@@ -958,6 +1018,23 @@ def account():
                 save_json('users.json', users)
                 success = "Arquivo removido"
 
+        elif action == 'update_profile':
+            if not perms.get('is_team', False) and not perms.get('is_admin', False):
+                error = "Sem permissão para personalizar perfil"
+            else:
+                profile = users[username].get('profile', {})
+                profile['display_name'] = sanitize_text(request.form.get('display_name', '').strip())
+                profile['avatar_url'] = sanitize_text(request.form.get('avatar_url', '').strip())
+                profile['color'] = request.form.get('color', '#0070f3')
+                profile['embed_author'] = sanitize_text(request.form.get('embed_author', '').strip())
+                profile['embed_author_url'] = sanitize_text(request.form.get('embed_author_url', '').strip())
+                profile['embed_footer'] = sanitize_text(request.form.get('embed_footer', '').strip())
+                if not is_valid_color(profile['color']):
+                    profile['color'] = '#0070f3'
+                users[username]['profile'] = profile
+                save_json('users.json', users)
+                success = "Perfil atualizado com sucesso"
+
         users = load_users()
         user = users.get(username, {})
         perms = user.get('permissions', {})
@@ -983,6 +1060,7 @@ def account():
         'account.html',
         username=username,
         perms=perms,
+        profile=user.get('profile', {}),
         invites=user_invites,
         user_files=user_files,
         DOMAIN=DOMAIN,
@@ -1108,6 +1186,7 @@ def create_user():
             return render_template('create_user.html', error=error, file_lifetime_options=FILE_LIFETIME_OPTIONS)
 
         is_admin_perm = 'is_admin' in request.form
+        is_team_perm = 'is_team' in request.form
         can_create_invites = 'can_create_invites' in request.form
         invite_count = int(request.form.get('invite_count', 0) or 0)
         can_change_title = 'can_change_title' in request.form
@@ -1121,6 +1200,7 @@ def create_user():
         if is_admin_perm:
             permissions = {
                 'is_admin': True,
+                'is_team': True,
                 'can_create_invites': True,
                 'invite_count': -1,
                 'file_lifetime': ['0'],
@@ -1133,6 +1213,7 @@ def create_user():
         else:
             permissions = {
                 'is_admin': False,
+                'is_team': is_team_perm,
                 'can_create_invites': can_create_invites,
                 'invite_count': invite_count if can_create_invites else 0,
                 'file_lifetime': file_lifetime,
@@ -1149,6 +1230,7 @@ def create_user():
             'uploads': 0,
             'status': 'approved',
             'permissions': permissions,
+            'profile': {},
         }
         save_json('users.json', users)
 
@@ -1172,6 +1254,7 @@ def edit_user(username):
 
     if request.method == 'POST':
         is_admin_perm = request.form.get('is_admin') == '1'
+        is_team_perm = request.form.get('is_team') == '1'
         can_create_invites = request.form.get('can_create_invites') == '1'
         invite_count = int(request.form.get('invite_count', 0) or 0)
         can_change_title = request.form.get('can_change_title') == '1'
@@ -1183,13 +1266,13 @@ def edit_user(username):
 
         if is_admin_perm:
             permissions = {
-                'is_admin': True, 'can_create_invites': True, 'invite_count': -1,
+                'is_admin': True, 'is_team': True, 'can_create_invites': True, 'invite_count': -1,
                 'file_lifetime': ['0'], 'can_change_title': True, 'can_use_hashbin': True,
                 'hashbin_lifetime': ['0'], 'can_change_password': True, 'can_choose_embed_color': True,
             }
         else:
             permissions = {
-                'is_admin': False, 'can_create_invites': can_create_invites,
+                'is_admin': False, 'is_team': is_team_perm, 'can_create_invites': can_create_invites,
                 'invite_count': invite_count if can_create_invites else 0,
                 'file_lifetime': file_lifetime, 'can_change_title': can_change_title,
                 'can_use_hashbin': can_use_hashbin,
@@ -1229,6 +1312,8 @@ def generate_invite():
     if max_count > 0:
         count = min(count, max_count)
 
+    max_uses = int(request.form.get('max_uses', 1) or 1)
+
     invites = load_json('invites.json')
     created = []
 
@@ -1242,6 +1327,9 @@ def generate_invite():
             'used': False,
             'used_by': None,
             'expires': None,
+            'permissions': None,
+            'max_uses': max_uses,
+            'use_count': 0,
         }
         created.append(code)
 

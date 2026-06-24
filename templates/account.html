@@ -88,6 +88,7 @@
           {% if perms.invite_count != 0 %}
           <form method="POST" style="display:inline">
             <input type="hidden" name="action" value="generate_invite">
+            <input type="hidden" name="max_uses" value="1">
             <button type="submit" class="btn btn-primary btn-sm">Gerar convite</button>
           </form>
           {% endif %}
@@ -111,6 +112,15 @@
                 {% endif %}
                 <span class="copy-feedback" style="color:var(--accent);font-size:11px;margin-left:8px"></span>
               </div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px">
+                {% if invite.max_uses is defined and invite.max_uses == -1 %}
+                  Usos: {{ invite.use_count }} / ∞
+                {% elif invite.max_uses is defined %}
+                  Usos: {{ invite.use_count }} / {{ invite.max_uses }}
+                {% else %}
+                  Uso único
+                {% endif %}
+              </div>
             </div>
             {% if not invite.used %}
             <div style="display:flex;gap:4px;margin-left:8px">
@@ -127,6 +137,48 @@
         {% else %}
           <p style="color:var(--text2);font-size:14px">Nenhum convite criado.</p>
         {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if perms.is_team or perms.is_admin %}
+    <div class="card reveal" style="margin-top:16px">
+      <div class="section">
+        <h2 class="section-title">Perfil e Embed</h2>
+        <p style="color:var(--text2);font-size:12px;margin-bottom:16px">Personalize como seus links aparecem no Discord e outras plataformas.</p>
+        <form method="POST">
+          <input type="hidden" name="action" value="update_profile">
+          <div class="grid" style="grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label>Nome de exibição</label>
+              <input type="text" name="display_name" value="{{ profile.display_name | default('') }}" placeholder="Seu nome">
+            </div>
+            <div class="form-group">
+              <label>Foto de perfil (URL)</label>
+              <input type="url" name="avatar_url" value="{{ profile.avatar_url | default('') }}" placeholder="https://...">
+            </div>
+            <div class="form-group">
+              <label>Cor do embed</label>
+              <div style="display:flex;align-items:center;gap:10px">
+                <input type="color" name="color" id="profileColor" value="{{ profile.color | default('#0070f3') }}">
+                <div id="profileColorPreview" style="flex:1;height:32px;border-radius:6px;background:{{ profile.color | default('#0070f3') }};border:1px solid var(--border);transition:background 0.15s"></div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Author do embed</label>
+              <input type="text" name="embed_author" value="{{ profile.embed_author | default('') }}" placeholder="Nome do author">
+            </div>
+            <div class="form-group">
+              <label>Link do author</label>
+              <input type="url" name="embed_author_url" value="{{ profile.embed_author_url | default('') }}" placeholder="https://...">
+            </div>
+            <div class="form-group">
+              <label>Footer do embed</label>
+              <input type="text" name="embed_footer" value="{{ profile.embed_footer | default('') }}" placeholder="Enviado via HashHost">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm" style="margin-top:8px">Salvar perfil</button>
+        </form>
       </div>
     </div>
     {% endif %}
@@ -165,6 +217,16 @@
       </div>
     </div>
   </div>
+
+  <script>
+    const profileColor = document.getElementById('profileColor');
+    const profilePreview = document.getElementById('profileColorPreview');
+    if (profileColor && profilePreview) {
+      profileColor.addEventListener('input', () => {
+        profilePreview.style.background = profileColor.value;
+      });
+    }
+  </script>
 
   <script src="/static/wavy-canvas.js"></script>
   <script src="/static/animations.js"></script>

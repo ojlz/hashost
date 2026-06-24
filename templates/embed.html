@@ -11,10 +11,22 @@
   <meta name="theme-color" content="{{ embed_color }}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="{{ proxy_url }}">
+  <meta property="og:site_name" content="HashHost">
+  {% if embed_author %}
+  <meta property="article:author" content="{{ embed_author }}">
+  {% endif %}
+  {% if avatar_url %}
+  <meta property="og:image:avatar" content="{{ avatar_url }}">
+  {% endif %}
   <title>{{ title }}</title>
 </head>
 <body style="margin:0;padding:20px;background:#000;color:#ededed;text-align:center;font-family:'JetBrains Mono',monospace">
   <h1 style="font-size:24px;font-weight:600;margin-bottom:16px;color:#ededed">{{ title }}</h1>
+  {% if embed_author %}
+  <p style="color:#888;font-size:12px;margin-bottom:8px">
+    {% if embed_author_url %}<a href="{{ embed_author_url }}" style="color:var(--accent);text-decoration:none">{{ embed_author }}</a>{% else %}{{ embed_author }}{% endif %}
+  </p>
+  {% endif %}
   <p style="color:#888;margin:16px 0;font-size:14px">{{ description }}</p>
 
   {{ media_html | safe }}
@@ -23,5 +35,8 @@
     <a href="{{ info_link }}" style="background:#1a1a1a;color:#ededed;padding:10px 20px;border-radius:8px;text-decoration:none;margin:0 8px;font-size:14px;border:1px solid #333">Info</a>
     <a href="{{ raw_link }}" style="background:#0070f3;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;margin:0 8px;font-size:14px">Link direto</a>
   </div>
+  {% if embed_footer %}
+  <p style="color:#555;font-size:11px;margin-top:24px">{{ embed_footer }}</p>
+  {% endif %}
 </body>
 </html>

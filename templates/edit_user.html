@@ -27,6 +27,9 @@
             <input type="checkbox" name="is_admin" id="is_admin" value="1" {% if user.permissions.is_admin %}checked{% endif %}> Admin
           </label>
           <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
+            <input type="checkbox" name="is_team" id="is_team" value="1" {% if user.permissions.is_team %}checked{% endif %}> Equipe
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
             <input type="checkbox" name="can_create_invites" id="can_create_invites" value="1" {% if user.permissions.can_create_invites %}checked{% endif %}> Criar invites
           </label>
           <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">

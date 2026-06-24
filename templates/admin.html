@@ -123,6 +123,13 @@
         <h2>Invites</h2>
         <form id="inviteForm" style="display:flex;gap:8px;align-items:center">
           <input type="number" name="count" value="1" min="1" max="10" style="width:80px;padding:6px 10px;font-size:13px">
+          <select name="max_uses" style="padding:6px 10px;font-size:13px;background:var(--surface2);color:var(--text1);border:1px solid var(--border);border-radius:6px">
+            <option value="1">1 uso</option>
+            <option value="3">3 usos</option>
+            <option value="5">5 usos</option>
+            <option value="10">10 usos</option>
+            <option value="-1">Ilimitado</option>
+          </select>
           <button type="submit" class="btn btn-primary btn-sm">Gerar invite</button>
         </form>
       </div>
@@ -132,7 +139,7 @@
           <div style="flex:1;min-width:0">
             <div class="invite-code">{{ code }}</div>
             <div style="font-family:monospace;font-size:11px;color:var(--text2);margin-top:2px;word-break:break-all">/iv/{{ code }}</div>
-            <div style="margin-top:4px">
+              <div style="margin-top:4px">
               {% if invite.used %}
               <span class="badge approved-badge" style="margin-left:0">Usado por {{ invite.used_by }}</span>
               {% else %}
@@ -140,6 +147,15 @@
               {% endif %}
               <span style="color:var(--text2);font-size:11px;margin-left:8px">por {{ invite.created_by }}</span>
               <span class="copy-feedback" style="color:var(--accent);font-size:11px;margin-left:8px"></span>
+            </div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px">
+              {% if invite.max_uses is defined and invite.max_uses == -1 %}
+                Usos: {{ invite.use_count }} / ∞
+              {% elif invite.max_uses is defined %}
+                Usos: {{ invite.use_count }} / {{ invite.max_uses }}
+              {% else %}
+                Uso único
+              {% endif %}
             </div>
           </div>
           {% if not invite.used %}
