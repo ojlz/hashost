@@ -36,8 +36,19 @@ def save_json(file, data):
 def hash_password(password):
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
+def hash_password_sha256(password):
+    return hashlib.sha256(password.encode('utf-8')).hexdigest()
+
 def check_password(password, hashed):
-    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+    if hashed.startswith('$2'):
+        return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+    return hashlib.sha256(password.encode('utf-8')).hexdigest() == hashed
+
+def upgrade_password(username, password):
+    users = load_users()
+    if username in users:
+        users[username]['password_hash'] = hash_password(password)
+        save_json('users.json', users)
 
 def load_users():
     users = load_json('users.json')
@@ -233,6 +244,8 @@ def login():
             return render_template_string(LOGIN_TEMPLATE, error="Usuario e senha obrigatorios")
         users = load_users()
         if username in users and check_password(password, users[username]['password_hash']):
+            if not users[username]['password_hash'].startswith('$2'):
+                upgrade_password(username, password)
             session['username'] = username
             session.permanent = True
             app.permanent_session_lifetime = timedelta(hours=24)
