@@ -76,6 +76,26 @@ DANGEROUS_EXTENSIONS = {
 }
 VIDEO_EXTENSIONS = {'.mp4', '.webm', '.avi', '.mov'}
 
+FILE_LIFETIME_OPTIONS = [
+    {'value': '1h', 'label': '1 hora', 'seconds': 3600},
+    {'value': '3d', 'label': '3 dias', 'seconds': 259200},
+    {'value': '1w', 'label': '1 semana', 'seconds': 604800},
+    {'value': '1M', 'label': '1 mes', 'seconds': 2592000},
+    {'value': '0', 'label': 'Permanente', 'seconds': 0},
+]
+
+DEFAULT_PERMISSIONS = {
+    'is_admin': False,
+    'can_create_invites': False,
+    'invite_count': 0,
+    'file_lifetime': ['0'],
+    'can_change_title': True,
+    'can_use_hashbin': False,
+    'hashbin_lifetime': ['0'],
+    'can_change_password': True,
+    'can_choose_embed_color': True,
+}
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -117,16 +137,20 @@ def load_users():
         users = {
             "admin": {
                 "password_hash": hash_password("admin123"),
+                "email": "admin@hashhost.local",
                 "created": datetime.now().isoformat(),
                 "uploads": 0,
+                "status": "approved",
                 "permissions": {
-                    "change_password": True,
-                    "upload_videos": True,
-                    "custom_urls": True,
                     "is_admin": True,
-                    "choose_embed_color": True,
-                    "permanent_files": True,
-                    "file_lifetime": 0,
+                    "can_create_invites": True,
+                    "invite_count": -1,
+                    "file_lifetime": ["0"],
+                    "can_change_title": True,
+                    "can_use_hashbin": True,
+                    "hashbin_lifetime": ["0"],
+                    "can_change_password": True,
+                    "can_choose_embed_color": True,
                 }
             }
         }
@@ -203,12 +227,30 @@ def get_media_dimensions(filepath):
         return (1200, 630)
 
 
-def is_admin():
+def is_admin_user():
     return (
         'username' in session
         and load_users().get(session['username'], {})
         .get('permissions', {}).get('is_admin', False)
     )
+
+
+def is_approved():
+    if 'username' not in session:
+        return False
+    users = load_users()
+    user = users.get(session['username'], {})
+    return user.get('status') == 'approved'
+
+
+def get_user_perms(username):
+    users = load_users()
+    user = users.get(username, {})
+    return user.get('permissions', DEFAULT_PERMISSIONS.copy())
+
+
+def generate_invite_code():
+    return secrets.token_urlsafe(8)
 
 
 def cleanup_anonymous_files():
@@ -239,35 +281,13 @@ def schedule_cleanup():
 schedule_cleanup()
 
 # ---------------------------------------------------------------------------
-# Routes — Auth
+# Routes — Public
 # ---------------------------------------------------------------------------
 @app.route('/')
-def index():
-    if 'username' not in session:
-        return redirect(url_for('login'))
-    users = load_users()
-    user = users.get(session['username'], {})
-    perms = user.get('permissions', {})
-    return render_template(
-        'dashboard.html',
-        username=session['username'],
-        is_admin=perms.get('is_admin', False),
-        can_change_password=perms.get('change_password', False),
-        can_custom_url=perms.get('custom_urls', False),
-        can_choose_embed_color=perms.get('choose_embed_color', False),
-    )
-
-
-@app.route('/anonymous')
-def anonymous():
-    return render_template(
-        'dashboard.html',
-        username='anonimo',
-        is_admin=False,
-        can_change_password=False,
-        can_custom_url=False,
-        can_choose_embed_color=False,
-    )
+def landing():
+    if 'username' in session:
+        return redirect(url_for('index'))
+    return render_template('landing.html')
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -279,7 +299,12 @@ def login():
             return render_template('login.html', error="Usuario e senha obrigatorios")
         users = load_users()
         if username in users and check_password(password, users[username]['password_hash']):
-            if not users[username]['password_hash'].startswith('$2'):
+            user = users[username]
+            if user.get('status') == 'pending':
+                return render_template('login.html', error="Sua conta esta pendente de aprovacao")
+            if user.get('status') == 'rejected':
+                return render_template('login.html', error="Sua conta foi rejeitada")
+            if not user['password_hash'].startswith('$2'):
                 upgrade_password(username, password)
             session['username'] = username
             session.permanent = True
@@ -289,64 +314,124 @@ def login():
     return render_template('login.html')
 
 
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        username = sanitize_text(request.form.get('username', '').strip())
+        email = sanitize_text(request.form.get('email', '').strip())
+        password = request.form.get('password', '')
+        invite_code = sanitize_text(request.form.get('invite_code', '').strip())
+
+        if not username or not email or not password:
+            return render_template('signup.html', error="Usuario, email e senha sao obrigatorios")
+        if len(username) < 3:
+            return render_template('signup.html', error="Usuario deve ter pelo menos 3 caracteres")
+        if len(password) < 6:
+            return render_template('signup.html', error="Senha deve ter pelo menos 6 caracteres")
+        if '@' not in email:
+            return render_template('signup.html', error="Email invalido")
+
+        users = load_users()
+        if username in users:
+            return render_template('signup.html', error="Usuario ja existe")
+
+        for u in users.values():
+            if u.get('email') == email:
+                return render_template('signup.html', error="Email ja esta em uso")
+
+        if invite_code:
+            invites = load_json('invites.json')
+            if invite_code not in invites:
+                return render_template('signup.html', error="Codigo de invite invalido")
+            invite = invites[invite_code]
+            if invite.get('used'):
+                return render_template('signup.html', error="Invite ja foi utilizado")
+            if invite.get('expires'):
+                if datetime.fromisoformat(invite['expires']) < datetime.now():
+                    return render_template('signup.html', error="Invite expirado")
+
+            users[username] = {
+                'password_hash': hash_password(password),
+                'email': email,
+                'created': datetime.now().isoformat(),
+                'uploads': 0,
+                'status': 'approved',
+                'permissions': {
+                    'is_admin': False,
+                    'can_create_invites': False,
+                    'invite_count': 0,
+                    'file_lifetime': ['0'],
+                    'can_change_title': True,
+                    'can_use_hashbin': False,
+                    'hashbin_lifetime': ['0'],
+                    'can_change_password': True,
+                    'can_choose_embed_color': True,
+                }
+            }
+            invites[invite_code]['used'] = True
+            invites[invite_code]['used_by'] = username
+            save_json('invites.json', invites)
+            save_json('users.json', users)
+            session['username'] = username
+            session.permanent = True
+            app.permanent_session_lifetime = timedelta(hours=24)
+            return redirect(url_for('index'))
+        else:
+            users[username] = {
+                'password_hash': hash_password(password),
+                'email': email,
+                'created': datetime.now().isoformat(),
+                'uploads': 0,
+                'status': 'pending',
+                'permissions': DEFAULT_PERMISSIONS.copy()
+            }
+            save_json('users.json', users)
+            return render_template('signup_success.html')
+
+    return render_template('signup.html')
+
+
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('login'))
+    return redirect(url_for('landing'))
 
 
-@app.route('/change_password', methods=['GET', 'POST'])
-def change_password():
+# ---------------------------------------------------------------------------
+# Routes — Dashboard
+# ---------------------------------------------------------------------------
+@app.route('/dashboard')
+def index():
     if 'username' not in session:
-        return abort(401, "Nao autorizado")
+        return redirect(url_for('login'))
+    if not is_approved():
+        session.clear()
+        return redirect(url_for('login'))
     users = load_users()
     user = users.get(session['username'], {})
-    if not user.get('permissions', {}).get('change_password', False):
-        return abort(403, "Sem permissao para alterar senha")
-
-    if request.method == 'POST':
-        current_password = request.form.get('current_password', '')
-        new_password = request.form.get('new_password', '')
-        confirm_password = request.form.get('confirm_password', '')
-
-        if not current_password or not new_password or not confirm_password:
-            return render_template('message.html', type='error',
-                                   message="Todos os campos sao obrigatorios.",
-                                   back_url='/change_password', back_text='Tentar novamente')
-        if not check_password(current_password, user['password_hash']):
-            return render_template('message.html', type='error',
-                                   message="Senha atual incorreta.",
-                                   back_url='/change_password', back_text='Tentar novamente')
-        if new_password != confirm_password:
-            return render_template('message.html', type='error',
-                                   message="Senhas nao coincidem.",
-                                   back_url='/change_password', back_text='Tentar novamente')
-        if len(new_password) < 6:
-            return render_template('message.html', type='error',
-                                   message="Nova senha deve ter pelo menos 6 caracteres.",
-                                   back_url='/change_password', back_text='Tentar novamente')
-
-        users[session['username']]['password_hash'] = hash_password(new_password)
-        save_json('users.json', users)
-        return render_template('message.html', type='success',
-                               message="Senha alterada com sucesso.",
-                               back_url='/', back_text='Voltar ao painel')
-
-    return render_template('change_password.html')
+    perms = user.get('permissions', {})
+    return render_template(
+        'dashboard.html',
+        username=session['username'],
+        is_admin=perms.get('is_admin', False),
+        can_change_password=perms.get('can_change_password', False),
+        can_choose_embed_color=perms.get('can_choose_embed_color', False),
+        can_change_title=perms.get('can_change_title', True),
+        can_use_hashbin=perms.get('can_use_hashbin', False),
+    )
 
 
-# ---------------------------------------------------------------------------
-# Routes — Upload
-# ---------------------------------------------------------------------------
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    username = session.get('username', 'anonymous')
-    is_logged = 'username' in session
+    if 'username' not in session:
+        return abort(401, "Nao autorizado")
+    if not is_approved():
+        return abort(403, "Conta nao aprovada")
 
-    if is_logged:
-        can_upload, message = check_rate_limit(username)
-        if not can_upload:
-            return abort(429, message)
+    username = session['username']
+    can_upload, message = check_rate_limit(username)
+    if not can_upload:
+        return abort(429, message)
 
     if 'file' not in request.files or request.files['file'].filename == '':
         return "Erro: Nenhum arquivo enviado", 400
@@ -355,11 +440,10 @@ def upload_file():
     file_content = file.read()
     filename = file.filename
 
-    allow_video = False
-    if is_logged:
-        users = load_users()
-        user = users.get(username, {})
-        allow_video = user.get('permissions', {}).get('upload_videos', False)
+    users = load_users()
+    user = users.get(username, {})
+    perms = user.get('permissions', {})
+    allow_video = True
 
     is_safe, error_msg = is_safe_file(file_content, filename, allow_video)
     if not is_safe:
@@ -367,8 +451,11 @@ def upload_file():
 
     title = request.form.get('title', '').strip() or 'Arquivo'
     description = request.form.get('description', '').strip() or ''
-    embed_color = request.form.get('embed_color', '#0070f3') if is_logged else '#0070f3'
-    custom_url = request.form.get('custom_url', '').strip() if is_logged else ''
+    embed_color = request.form.get('embed_color', '#0070f3')
+    file_lifetime = request.form.get('file_lifetime', '0')
+
+    if not perms.get('can_change_title', True):
+        title = 'Arquivo'
 
     ext = os.path.splitext(secure_filename(filename))[1].lower()
     random_name = secrets.token_hex(16) + ext
@@ -382,22 +469,19 @@ def upload_file():
         pass
 
     short_urls = load_json('short_urls.json')
-
-    if custom_url and is_logged:
-        users = load_users()
-        user = users.get(username, {})
-        if user.get('permissions', {}).get('custom_urls', False):
-            if custom_url in short_urls:
-                os.remove(filepath)
-                return "Erro: URL personalizada ja existe", 400
-            short_id = custom_url
-        else:
-            short_id = secrets.token_urlsafe(8)
-    else:
-        short_id = secrets.token_urlsafe(8)
-
+    short_id = secrets.token_urlsafe(8)
     while short_id in short_urls:
         short_id = secrets.token_urlsafe(8)
+
+    expire_seconds = 0
+    for opt in FILE_LIFETIME_OPTIONS:
+        if opt['value'] == file_lifetime:
+            expire_seconds = opt['seconds']
+            break
+
+    expire_at = None
+    if expire_seconds > 0:
+        expire_at = (datetime.now() + timedelta(seconds=expire_seconds)).isoformat()
 
     short_urls[short_id] = {
         'filename': random_name,
@@ -408,16 +492,17 @@ def upload_file():
         'upload_time': datetime.now().isoformat(),
         'views': 0,
         'embed_color': embed_color,
-        'anonymous': not is_logged,
+        'anonymous': False,
         'file_size': len(file_content),
+        'expire_at': expire_at,
+        'file_lifetime': file_lifetime,
     }
     save_json('short_urls.json', short_urls)
 
-    if is_logged:
-        update_rate_limit(username)
-        users = load_users()
-        users[username]['uploads'] = users[username].get('uploads', 0) + 1
-        save_json('users.json', users)
+    update_rate_limit(username)
+    users = load_users()
+    users[username]['uploads'] = users[username].get('uploads', 0) + 1
+    save_json('users.json', users)
 
     return "Upload concluido: %s/s/%s" % (DOMAIN, short_id)
 
@@ -436,6 +521,16 @@ def short_url(short_id):
         return abort(404, "URL nao encontrada")
 
     data = short_urls[actual_id]
+
+    if data.get('expire_at'):
+        if datetime.fromisoformat(data['expire_at']) < datetime.now():
+            filepath = os.path.join(UPLOAD_FOLDER, data['filename'])
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            del short_urls[actual_id]
+            save_json('short_urls.json', short_urls)
+            return abort(404, "Arquivo expirado")
+
     filepath = os.path.join(UPLOAD_FOLDER, data['filename'])
     if not os.path.exists(filepath):
         return abort(404, "Arquivo nao encontrado")
@@ -539,200 +634,65 @@ def proxy_image(filename):
 
 
 # ---------------------------------------------------------------------------
-# Routes — Admin
+# Routes — HashBin
 # ---------------------------------------------------------------------------
-@app.route('/admin')
-def admin_panel():
-    if not is_admin():
-        return abort(403, "Acesso negado")
-
-    users = load_users()
-    short_urls = load_json('short_urls.json')
-
-    total_size = 0
-    user_stats = {}
-    for data in short_urls.values():
-        fp = os.path.join(UPLOAD_FOLDER, data['filename'])
-        if os.path.exists(fp):
-            total_size += os.path.getsize(fp)
-        u = data['username']
-        if u not in user_stats:
-            user_stats[u] = {'uploads': 0, 'size': 0}
-        user_stats[u]['uploads'] += 1
-        user_stats[u]['size'] += data.get('file_size', 0)
-
-    top_users = sorted(user_stats.items(), key=lambda x: x[1]['uploads'], reverse=True)[:10]
-    total_views = sum(d.get('views', 0) for d in short_urls.values())
-
-    top_users_data = [
-        {'username': u, 'uploads': d['uploads'], 'size_mb': d['size'] // 1024 // 1024}
-        for u, d in top_users
-    ]
-
-    return render_template(
-        'admin.html',
-        users=users,
-        total_files=len(short_urls),
-        total_users=len(users),
-        total_size_mb=total_size // 1024 // 1024,
-        total_views=total_views,
-        top_users=top_users_data,
-    )
+@app.route('/hashbin')
+def hashbin():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    if not is_approved():
+        return abort(403, "Conta nao aprovada")
+    perms = get_user_perms(session['username'])
+    if not perms.get('can_use_hashbin', False):
+        return abort(403, "Sem permissao para usar HashBin")
+    return render_template('hashbin.html')
 
 
-@app.route('/admin/create_user', methods=['GET', 'POST'])
-def create_user():
-    if not is_admin():
-        return abort(403, "Acesso negado")
+@app.route('/hashbin/create', methods=['POST'])
+def hashbin_create():
+    if 'username' not in session:
+        return jsonify({'error': 'Nao autorizado'})
+    if not is_approved():
+        return jsonify({'error': 'Conta nao aprovada'})
+    perms = get_user_perms(session['username'])
+    if not perms.get('can_use_hashbin', False):
+        return jsonify({'error': 'Sem permissao para usar HashBin'})
 
-    if request.method == 'POST':
-        new_username = sanitize_text(request.form.get('username', '').strip())
-        new_password = request.form.get('password', '').strip()
+    content = request.form.get('content', '').strip()
+    title = sanitize_text(request.form.get('title', 'Paste sem titulo'))
+    syntax = request.form.get('syntax', 'text')
+    try:
+        expiry = int(request.form.get('expiry', 0) or 0)
+    except (ValueError, TypeError):
+        expiry = 0
 
-        if not new_username or not new_password:
-            return render_template('message.html', type='error',
-                                   message="Usuario e senha obrigatorios.",
-                                   back_url='/admin/create_user', back_text='Tentar novamente')
-        if len(new_password) < 6:
-            return render_template('message.html', type='error',
-                                   message="Senha deve ter pelo menos 6 caracteres.",
-                                   back_url='/admin/create_user', back_text='Tentar novamente')
+    if not content:
+        return jsonify({'error': 'Conteudo e obrigatorio'})
+    if len(content.encode('utf-8')) > 30 * 1024 * 1024:
+        return jsonify({'error': 'Conteudo muito grande (maximo 30MB)'})
 
-        users = load_users()
-        if new_username in users:
-            return render_template('message.html', type='error',
-                                   message="Usuario ja existe.",
-                                   back_url='/admin/create_user', back_text='Tentar novamente')
+    allowed_lifetimes = perms.get('hashbin_lifetime', ['0'])
+    if str(expiry) not in allowed_lifetimes and expiry != 0:
+        expiry = 0
 
-        permissions = {
-            'change_password': 'change_password' in request.form,
-            'upload_videos': 'upload_videos' in request.form,
-            'custom_urls': 'custom_urls' in request.form,
-            'is_admin': 'is_admin' in request.form,
-            'choose_embed_color': 'choose_embed_color' in request.form,
-            'permanent_files': 'permanent_files' in request.form,
-            'file_lifetime': int(request.form.get('file_lifetime', 0) or 0),
-        }
-        users[new_username] = {
-            'password_hash': hash_password(new_password),
-            'created': datetime.now().isoformat(),
-            'uploads': 0,
-            'permissions': permissions,
-        }
-        save_json('users.json', users)
+    paste_id = secrets.token_urlsafe(10)
+    paste_file = os.path.join(TOOLS_FOLDER, '%s.txt' % paste_id)
+    with open(paste_file, 'w', encoding='utf-8') as f:
+        f.write(content)
 
-        return render_template('message.html', type='success',
-                               message="Usuario '%s' criado com sucesso." % new_username,
-                               back_url='/admin', back_text='Voltar ao admin')
-
-    return render_template('create_user.html')
-
-
-@app.route('/admin/delete_user/<username>')
-def delete_user(username):
-    if not is_admin():
-        return abort(403, "Acesso negado")
-    users = load_users()
-    if username in users and username != session.get('username'):
-        del users[username]
-        save_json('users.json', users)
-    return redirect('/admin')
-
-
-@app.route('/admin/cleanup')
-def manual_cleanup():
-    if not is_admin():
-        return abort(403, "Acesso negado")
-    cleanup_anonymous_files()
-    return redirect('/admin')
-
-
-# ---------------------------------------------------------------------------
-# Routes — Tools
-# ---------------------------------------------------------------------------
-@app.route('/tools')
-def tools():
-    return render_template('tools.html')
-
-
-@app.route('/tools/shortener', methods=['GET', 'POST'])
-def url_shortener():
-    if request.method == 'POST':
-        original_url = request.form.get('url', '').strip()
-        custom_alias = sanitize_text(request.form.get('custom_alias', '').strip())
-
-        if not original_url:
-            return jsonify({'error': 'URL e obrigatoria'})
-        if not original_url.startswith(('http://', 'https://')):
-            original_url = 'https://' + original_url
-
-        shortened_links = load_json('shortened_links.json')
-
-        if custom_alias:
-            if custom_alias in shortened_links:
-                return jsonify({'error': 'Alias ja existe'})
-            short_id = custom_alias
-        else:
-            short_id = secrets.token_urlsafe(6)
-            while short_id in shortened_links:
-                short_id = secrets.token_urlsafe(6)
-
-        shortened_links[short_id] = {
-            'url': original_url,
-            'created': datetime.now().isoformat(),
-            'clicks': 0,
-        }
-        save_json('shortened_links.json', shortened_links)
-        return jsonify({'success': True, 'short_url': "%s/l/%s" % (DOMAIN, short_id)})
-
-    return render_template('shortener.html')
-
-
-@app.route('/l/<short_id>')
-def redirect_short_url(short_id):
-    shortened_links = load_json('shortened_links.json')
-    if short_id not in shortened_links:
-        return abort(404, "Link nao encontrado")
-    shortened_links[short_id]['clicks'] += 1
-    save_json('shortened_links.json', shortened_links)
-    return redirect(shortened_links[short_id]['url'])
-
-
-@app.route('/tools/pastebin', methods=['GET', 'POST'])
-def pastebin():
-    if request.method == 'POST':
-        content = request.form.get('content', '').strip()
-        title = sanitize_text(request.form.get('title', 'Paste sem titulo'))
-        syntax = request.form.get('syntax', 'text')
-        try:
-            expiry = int(request.form.get('expiry', 0) or 0)
-        except (ValueError, TypeError):
-            expiry = 0
-
-        if not content:
-            return jsonify({'error': 'Conteudo e obrigatorio'})
-        if len(content.encode('utf-8')) > 30 * 1024 * 1024:
-            return jsonify({'error': 'Conteudo muito grande (maximo 30MB)'})
-
-        paste_id = secrets.token_urlsafe(10)
-        paste_file = os.path.join(TOOLS_FOLDER, '%s.txt' % paste_id)
-        with open(paste_file, 'w', encoding='utf-8') as f:
-            f.write(content)
-
-        pastes = load_json('pastes.json')
-        expire_time = (datetime.now() + timedelta(hours=expiry)).isoformat() if expiry > 0 else None
-        pastes[paste_id] = {
-            'title': title,
-            'syntax': syntax,
-            'created': datetime.now().isoformat(),
-            'expires': expire_time,
-            'views': 0,
-            'size': len(content.encode('utf-8')),
-        }
-        save_json('pastes.json', pastes)
-        return jsonify({'success': True, 'paste_url': "%s/p/%s" % (DOMAIN, paste_id)})
-
-    return render_template('pastebin.html')
+    pastes = load_json('pastes.json')
+    expire_time = (datetime.now() + timedelta(hours=expiry)).isoformat() if expiry > 0 else None
+    pastes[paste_id] = {
+        'title': title,
+        'syntax': syntax,
+        'created': datetime.now().isoformat(),
+        'expires': expire_time,
+        'views': 0,
+        'size': len(content.encode('utf-8')),
+        'username': session['username'],
+    }
+    save_json('pastes.json', pastes)
+    return jsonify({'success': True, 'paste_url': "%s/p/%s" % (DOMAIN, paste_id)})
 
 
 @app.route('/p/<paste_id>')
@@ -795,6 +755,320 @@ def view_paste_raw(paste_id):
         return content, 200, {'Content-Type': 'text/plain; charset=utf-8'}
     except FileNotFoundError:
         return abort(404, "Arquivo nao encontrado")
+
+
+# ---------------------------------------------------------------------------
+# Routes — Change Password
+# ---------------------------------------------------------------------------
+@app.route('/change_password', methods=['GET', 'POST'])
+def change_password():
+    if 'username' not in session:
+        return abort(401, "Nao autorizado")
+    if not is_approved():
+        return abort(403, "Conta nao aprovada")
+    users = load_users()
+    user = users.get(session['username'], {})
+    if not user.get('permissions', {}).get('can_change_password', False):
+        return abort(403, "Sem permissao para alterar senha")
+
+    if request.method == 'POST':
+        current_password = request.form.get('current_password', '')
+        new_password = request.form.get('new_password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        if not current_password or not new_password or not confirm_password:
+            return render_template('message.html', type='error',
+                                   message="Todos os campos sao obrigatorios.",
+                                   back_url='/change_password', back_text='Tentar novamente')
+        if not check_password(current_password, user['password_hash']):
+            return render_template('message.html', type='error',
+                                   message="Senha atual incorreta.",
+                                   back_url='/change_password', back_text='Tentar novamente')
+        if new_password != confirm_password:
+            return render_template('message.html', type='error',
+                                   message="Senhas nao coincidem.",
+                                   back_url='/change_password', back_text='Tentar novamente')
+        if len(new_password) < 6:
+            return render_template('message.html', type='error',
+                                   message="Nova senha deve ter pelo menos 6 caracteres.",
+                                   back_url='/change_password', back_text='Tentar novamente')
+
+        users[session['username']]['password_hash'] = hash_password(new_password)
+        save_json('users.json', users)
+        return render_template('message.html', type='success',
+                               message="Senha alterada com sucesso.",
+                               back_url='/dashboard', back_text='Voltar ao painel')
+
+    return render_template('change_password.html')
+
+
+# ---------------------------------------------------------------------------
+# Routes — Admin
+# ---------------------------------------------------------------------------
+@app.route('/admin')
+def admin_panel():
+    if not is_admin_user():
+        return abort(403, "Acesso negado")
+
+    users = load_users()
+    short_urls = load_json('short_urls.json')
+    invites = load_json('invites.json')
+
+    total_size = 0
+    user_stats = {}
+    for data in short_urls.values():
+        fp = os.path.join(UPLOAD_FOLDER, data['filename'])
+        if os.path.exists(fp):
+            total_size += os.path.getsize(fp)
+        u = data['username']
+        if u not in user_stats:
+            user_stats[u] = {'uploads': 0, 'size': 0}
+        user_stats[u]['uploads'] += 1
+        user_stats[u]['size'] += data.get('file_size', 0)
+
+    top_users = sorted(user_stats.items(), key=lambda x: x[1]['uploads'], reverse=True)[:10]
+    total_views = sum(d.get('views', 0) for d in short_urls.values())
+
+    pending_users = {u: d for u, d in users.items() if d.get('status') == 'pending'}
+    approved_users = {u: d for u, d in users.items() if d.get('status') == 'approved'}
+
+    top_users_data = [
+        {'username': u, 'uploads': d['uploads'], 'size_mb': d['size'] // 1024 // 1024}
+        for u, d in top_users
+    ]
+
+    return render_template(
+        'admin.html',
+        users=users,
+        pending_users=pending_users,
+        approved_users=approved_users,
+        total_files=len(short_urls),
+        total_users=len(approved_users),
+        total_size_mb=total_size // 1024 // 1024,
+        total_views=total_views,
+        top_users=top_users_data,
+        invites=invites,
+        file_lifetime_options=FILE_LIFETIME_OPTIONS,
+    )
+
+
+@app.route('/admin/approve_user/<username>')
+def approve_user(username):
+    if not is_admin_user():
+        return abort(403, "Acesso negado")
+    users = load_users()
+    if username in users:
+        users[username]['status'] = 'approved'
+        save_json('users.json', users)
+    return redirect('/admin')
+
+
+@app.route('/admin/reject_user/<username>')
+def reject_user(username):
+    if not is_admin_user():
+        return abort(403, "Acesso negado")
+    users = load_users()
+    if username in users:
+        users[username]['status'] = 'rejected'
+        save_json('users.json', users)
+    return redirect('/admin')
+
+
+@app.route('/admin/delete_user/<username>')
+def delete_user(username):
+    if not is_admin_user():
+        return abort(403, "Acesso negado")
+    users = load_users()
+    if username in users and username != session.get('username'):
+        del users[username]
+        save_json('users.json', users)
+    return redirect('/admin')
+
+
+@app.route('/admin/create_user', methods=['GET', 'POST'])
+def create_user():
+    if not is_admin_user():
+        return abort(403, "Acesso negado")
+
+    if request.method == 'POST':
+        new_username = sanitize_text(request.form.get('username', '').strip())
+        new_password = request.form.get('password', '').strip()
+        new_email = sanitize_text(request.form.get('email', '').strip())
+
+        if not new_username or not new_password or not new_email:
+            return render_template('message.html', type='error',
+                                   message="Usuario, email e senha sao obrigatorios.",
+                                   back_url='/admin/create_user', back_text='Tentar novamente')
+        if len(new_password) < 6:
+            return render_template('message.html', type='error',
+                                   message="Senha deve ter pelo menos 6 caracteres.",
+                                   back_url='/admin/create_user', back_text='Tentar novamente')
+
+        users = load_users()
+        if new_username in users:
+            return render_template('message.html', type='error',
+                                   message="Usuario ja existe.",
+                                   back_url='/admin/create_user', back_text='Tentar novamente')
+
+        is_admin_perm = 'is_admin' in request.form
+        can_create_invites = 'can_create_invites' in request.form
+        invite_count = int(request.form.get('invite_count', 0) or 0)
+        can_change_title = 'can_change_title' in request.form
+        can_use_hashbin = 'can_use_hashbin' in request.form
+        can_change_password = 'can_change_password' in request.form
+        can_choose_embed_color = 'can_choose_embed_color' in request.form
+
+        file_lifetime = request.form.getlist('file_lifetime') or ['0']
+        hashbin_lifetime = request.form.getlist('hashbin_lifetime') or ['0']
+
+        if is_admin_perm:
+            permissions = {
+                'is_admin': True,
+                'can_create_invites': True,
+                'invite_count': -1,
+                'file_lifetime': ['0'],
+                'can_change_title': True,
+                'can_use_hashbin': True,
+                'hashbin_lifetime': ['0'],
+                'can_change_password': True,
+                'can_choose_embed_color': True,
+            }
+        else:
+            permissions = {
+                'is_admin': False,
+                'can_create_invites': can_create_invites,
+                'invite_count': invite_count if can_create_invites else 0,
+                'file_lifetime': file_lifetime,
+                'can_change_title': can_change_title,
+                'can_use_hashbin': can_use_hashbin,
+                'hashbin_lifetime': hashbin_lifetime if can_use_hashbin else ['0'],
+                'can_change_password': can_change_password,
+                'can_choose_embed_color': can_choose_embed_color,
+            }
+
+        users[new_username] = {
+            'password_hash': hash_password(new_password),
+            'email': new_email,
+            'created': datetime.now().isoformat(),
+            'uploads': 0,
+            'status': 'approved',
+            'permissions': permissions,
+        }
+        save_json('users.json', users)
+
+        return render_template('message.html', type='success',
+                               message="Usuario '%s' criado com sucesso." % new_username,
+                               back_url='/admin', back_text='Voltar ao admin')
+
+    return render_template('create_user.html', file_lifetime_options=FILE_LIFETIME_OPTIONS)
+
+
+@app.route('/admin/edit_user/<username>', methods=['GET', 'POST'])
+def edit_user(username):
+    if not is_admin_user():
+        return abort(403, "Acesso negado")
+    users = load_users()
+    if username not in users:
+        return redirect('/admin')
+
+    if request.method == 'POST':
+        is_admin_perm = 'is_admin' in request.form
+        can_create_invites = 'can_create_invites' in request.form
+        invite_count = int(request.form.get('invite_count', 0) or 0)
+        can_change_title = 'can_change_title' in request.form
+        can_use_hashbin = 'can_use_hashbin' in request.form
+        can_change_password = 'can_change_password' in request.form
+        can_choose_embed_color = 'can_choose_embed_color' in request.form
+        file_lifetime = request.form.getlist('file_lifetime') or ['0']
+        hashbin_lifetime = request.form.getlist('hashbin_lifetime') or ['0']
+
+        if is_admin_perm:
+            permissions = {
+                'is_admin': True, 'can_create_invites': True, 'invite_count': -1,
+                'file_lifetime': ['0'], 'can_change_title': True, 'can_use_hashbin': True,
+                'hashbin_lifetime': ['0'], 'can_change_password': True, 'can_choose_embed_color': True,
+            }
+        else:
+            permissions = {
+                'is_admin': False, 'can_create_invites': can_create_invites,
+                'invite_count': invite_count if can_create_invites else 0,
+                'file_lifetime': file_lifetime, 'can_change_title': can_change_title,
+                'can_use_hashbin': can_use_hashbin,
+                'hashbin_lifetime': hashbin_lifetime if can_use_hashbin else ['0'],
+                'can_change_password': can_change_password,
+                'can_choose_embed_color': can_choose_embed_color,
+            }
+
+        users[username]['permissions'] = permissions
+        save_json('users.json', users)
+        return redirect('/admin')
+
+    return render_template(
+        'edit_user.html',
+        username=username,
+        user=users[username],
+        file_lifetime_options=FILE_LIFETIME_OPTIONS,
+    )
+
+
+@app.route('/admin/generate_invite', methods=['POST'])
+def generate_invite():
+    if not is_admin_user():
+        return jsonify({'error': 'Sem permissao'})
+
+    users = load_users()
+    admin_user = users.get(session['username'], {})
+    admin_perms = admin_user.get('permissions', {})
+
+    if admin_perms.get('invite_count', 0) == 0:
+        return jsonify({'error': 'Limite de invites atingido'})
+
+    count = int(request.form.get('count', 1) or 1)
+    max_count = admin_perms.get('invite_count', 0)
+    if max_count > 0:
+        count = min(count, max_count)
+
+    invites = load_json('invites.json')
+    created = []
+
+    for _ in range(count):
+        code = generate_invite_code()
+        while code in invites:
+            code = generate_invite_code()
+        invites[code] = {
+            'created_by': session['username'],
+            'created_at': datetime.now().isoformat(),
+            'used': False,
+            'used_by': None,
+            'expires': None,
+        }
+        created.append(code)
+
+    if max_count > 0:
+        users[session['username']]['permissions']['invite_count'] = max(0, max_count - count)
+
+    save_json('invites.json', invites)
+    save_json('users.json', users)
+    return jsonify({'success': True, 'invites': created})
+
+
+@app.route('/admin/delete_invite/<code>')
+def delete_invite(code):
+    if not is_admin_user():
+        return abort(403, "Acesso negado")
+    invites = load_json('invites.json')
+    if code in invites:
+        del invites[code]
+        save_json('invites.json', invites)
+    return redirect('/admin')
+
+
+@app.route('/admin/cleanup')
+def manual_cleanup():
+    if not is_admin_user():
+        return abort(403, "Acesso negado")
+    cleanup_anonymous_files()
+    return redirect('/admin')
 
 
 # ---------------------------------------------------------------------------

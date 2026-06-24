@@ -52,7 +52,9 @@
     <div class="header">
       <div class="logo glitch" data-text="HHost">H<span>Host</span></div>
       <div class="nav">
-        <a href="/tools" class="btn btn-ghost">Tools</a>
+        {% if can_use_hashbin %}
+        <a href="/hashbin" class="btn btn-ghost">HashBin</a>
+        {% endif %}
         {% if is_admin %}
         <a href="/admin" class="btn btn-ghost">Admin</a>
         {% endif %}
@@ -88,18 +90,22 @@
             <label>Descricao</label>
             <input type="text" name="description" placeholder="Descricao opcional">
           </div>
-          {% if can_custom_url %}
-          <div class="form-group">
-            <label>URL personalizada</label>
-            <input type="text" name="custom_url" placeholder="meu-link">
-          </div>
-          {% endif %}
           {% if can_choose_embed_color %}
           <div class="form-group">
             <label>Cor do embed</label>
             <input type="color" name="embed_color" value="#0070f3">
           </div>
           {% endif %}
+          <div class="form-group">
+            <label>Vida util</label>
+            <select name="file_lifetime">
+              <option value="0">Permanente</option>
+              <option value="1h">1 hora</option>
+              <option value="3d">3 dias</option>
+              <option value="1w">1 semana</option>
+              <option value="1M">1 mes</option>
+            </select>
+          </div>
         </div>
 
         <button type="submit" class="btn btn-primary" style="width:100%">Enviar</button>

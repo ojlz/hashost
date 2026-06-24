@@ -16,17 +16,39 @@
       border-radius: 8px;
       margin-bottom: 8px;
     }
-    .user-actions { display: flex; gap: 8px; }
+    .user-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .invite-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: var(--surface2);
+      border-radius: 8px;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+    .invite-code { font-family: monospace; color: var(--accent); }
+    .section-title { margin: 24px 0 12px; font-size: 16px; }
+    .pending-badge {
+      background: rgba(255, 180, 0, 0.15);
+      color: #ffb400;
+      border: 1px solid rgba(255, 180, 0, 0.3);
+    }
+    .approved-badge {
+      background: rgba(0, 170, 0, 0.1);
+      color: #0a0;
+      border: 1px solid rgba(0, 170, 0, 0.2);
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <a href="/" class="logo glitch" data-text="HHost">H<span>Host</span></a>
+      <a href="/dashboard" class="logo glitch" data-text="HHost">H<span>Host</span></a>
       <div class="nav">
         <a href="/admin/create_user" class="btn btn-primary btn-sm">Novo usuario</a>
         <a href="/admin/cleanup" class="btn btn-secondary btn-sm">Limpar anonimos</a>
-        <a href="/" class="btn btn-ghost btn-sm">Voltar</a>
+        <a href="/dashboard" class="btn btn-ghost btn-sm">Voltar</a>
       </div>
     </div>
 
@@ -51,20 +73,76 @@
       </div>
     </div>
 
+    {% if pending_users %}
     <div class="card" style="margin-top:16px">
-      <h2 style="margin-bottom:16px">Usuarios</h2>
-      {% for username, user in users.items() %}
+      <h2 style="margin-bottom:16px">Usuarios pendentes</h2>
+      {% for username, user in pending_users.items() %}
       <div class="user-item">
         <div>
           <strong>{{ username }}</strong>
-          <span class="badge">{{ user.uploads }} envios</span>
+          <span class="badge pending-badge">Pendente</span>
+          <span style="color:var(--text2);font-size:12px;margin-left:8px">{{ user.email }}</span>
         </div>
         <div class="user-actions">
+          <a href="/admin/approve_user/{{ username }}" class="btn btn-primary btn-sm">Aprovar</a>
+          <a href="/admin/reject_user/{{ username }}" class="btn btn-danger btn-sm"
+             onclick="return confirm('Rejeitar {{ username }}?')">Rejeitar</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card" style="margin-top:16px">
+      <h2 style="margin-bottom:16px">Usuarios</h2>
+      {% for username, user in approved_users.items() %}
+      <div class="user-item">
+        <div>
+          <strong>{{ username }}</strong>
+          <span class="badge approved-badge">Ativo</span>
+          <span class="badge">{{ user.uploads }} envios</span>
+          {% if user.permissions.is_admin %}
+          <span class="badge" style="background:rgba(0,112,243,0.15);color:var(--accent);border-color:rgba(0,112,243,0.3)">Admin</span>
+          {% endif %}
+        </div>
+        <div class="user-actions">
+          <a href="/admin/edit_user/{{ username }}" class="btn btn-secondary btn-sm">Editar</a>
           <a href="/admin/delete_user/{{ username }}" class="btn btn-danger btn-sm"
              onclick="return confirm('Remover {{ username }}?')">Remover</a>
         </div>
       </div>
       {% endfor %}
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h2>Invites</h2>
+        <form id="inviteForm" style="display:flex;gap:8px;align-items:center">
+          <input type="number" name="count" value="1" min="1" max="10" style="width:80px;padding:6px 10px;font-size:13px">
+          <button type="submit" class="btn btn-primary btn-sm">Gerar invite</button>
+        </form>
+      </div>
+      {% if invites %}
+        {% for code, invite in invites.items() %}
+        <div class="invite-item">
+          <div>
+            <span class="invite-code">{{ code }}</span>
+            {% if invite.used %}
+            <span class="badge approved-badge" style="margin-left:8px">Usado por {{ invite.used_by }}</span>
+            {% else %}
+            <span class="badge" style="margin-left:8px">Disponivel</span>
+            {% endif %}
+            <span style="color:var(--text2);font-size:11px;margin-left:8px">por {{ invite.created_by }}</span>
+          </div>
+          {% if not invite.used %}
+          <a href="/admin/delete_invite/{{ code }}" class="btn btn-danger btn-sm"
+             onclick="return confirm('Remover invite?')">Remover</a>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color:var(--text2);font-size:14px">Nenhum invite criado.</p>
+      {% endif %}
     </div>
 
     <div class="card" style="margin-top:16px">
@@ -78,17 +156,35 @@
           </tr>
         </thead>
         <tbody>
-          {% for username, stats in top_users %}
+          {% for user in top_users %}
           <tr>
-            <td>{{ username }}</td>
-            <td>{{ stats.uploads }}</td>
-            <td>{{ stats.size_mb }} MB</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.uploads }}</td>
+            <td>{{ user.size_mb }} MB</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
+
+  <script>
+    document.getElementById('inviteForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      try {
+        const r = await fetch('/admin/generate_invite', { method: 'POST', body: fd });
+        const data = await r.json();
+        if (data.success) {
+          location.reload();
+        } else {
+          alert(data.error || 'Erro ao gerar invite');
+        }
+      } catch (err) {
+        alert('Erro ao gerar invite');
+      }
+    });
+  </script>
 </body>
 <script src="/static/wavy-canvas.js"></script>
 <script src="/static/animations.js"></script>

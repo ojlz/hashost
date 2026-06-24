@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <title>HashHost</title>
+  <title>HashHost - Criar conta</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -25,15 +25,21 @@
           <input type="text" name="username" required autofocus placeholder="seu-usuario">
         </div>
         <div class="form-group">
+          <label>Email</label>
+          <input type="email" name="email" required placeholder="seu@email.com">
+        </div>
+        <div class="form-group">
           <label>Senha</label>
           <input type="password" name="password" required placeholder="sua-senha">
         </div>
-        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px">Entrar</button>
+        <div class="form-group">
+          <label>Codigo de convite</label>
+          <input type="text" name="invite_code" placeholder="Opcional - se tiver um codigo">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px">Criar conta</button>
       </form>
 
-      <p style="text-align:center;margin-top:24px;font-size:13px;color:var(--text2)">
-        Nao tem uma conta? <a href="/signup">Criar conta</a>
-      </p>
+      <p style="text-align:center;margin-top:24px;font-size:14px;color:var(--text2)">Ja tem uma conta? <a href="/login">Entrar</a></p>
     </div>
   </div>
 </body>

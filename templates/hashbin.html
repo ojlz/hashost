@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>HashBin - HHost</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container page-enter">
+    <div class="header">
+      <a href="/dashboard" class="logo glitch" data-text="HHost">H<span>Host</span></a>
+      <div class="nav">
+        <a href="/dashboard" class="btn btn-ghost">Voltar</a>
+      </div>
+    </div>
+
+    <div class="card reveal">
+      <h2>HashBin</h2>
+      <p style="color:var(--text2);font-size:14px;margin-bottom:20px">Compartilhar codigo e texto</p>
+
+      <form id="hashbinForm">
+        <div class="form-group">
+          <label>Titulo</label>
+          <input type="text" name="title" placeholder="Titulo opcional">
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="form-group">
+            <label>Sintaxe</label>
+            <select name="syntax">
+              <option value="text">Texto simples</option>
+              <option value="javascript">JavaScript</option>
+              <option value="python">Python</option>
+              <option value="html">HTML</option>
+              <option value="css">CSS</option>
+              <option value="json">JSON</option>
+              <option value="bash">Bash</option>
+              <option value="sql">SQL</option>
+              <option value="php">PHP</option>
+              <option value="java">Java</option>
+              <option value="c">C</option>
+              <option value="go">Go</option>
+              <option value="rust">Rust</option>
+              <option value="typescript">TypeScript</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Expiracao</label>
+            <select name="expiry">
+              <option value="0">Nunca</option>
+              <option value="1">1 hora</option>
+              <option value="24">24 horas</option>
+              <option value="168">1 semana</option>
+              <option value="720">1 mes</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Conteudo</label>
+          <textarea name="content" rows="20" placeholder="Cole o codigo ou texto aqui..." style="font-family:'JetBrains Mono',monospace;font-size:13px"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%">Criar paste</button>
+      </form>
+
+      <div id="resultBox" style="display:none;margin-top:16px;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:8px">
+        <p style="font-size:14px;color:var(--text2);margin-bottom:8px">Link do paste:</p>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="pasteUrl" readonly style="flex:1;padding:8px 12px;background:var(--bg);color:var(--accent);border:1px solid var(--border);border-radius:6px;font-family:monospace;font-size:13px">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="copyPasteUrl()">Copiar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('hashbinForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      try {
+        const r = await fetch('/hashbin/create', { method: 'POST', body: fd });
+        const data = await r.json();
+        if (!r.ok) {
+          alert(data.error || 'Erro ao criar paste');
+          return;
+        }
+        const resultBox = document.getElementById('resultBox');
+        document.getElementById('pasteUrl').value = data.paste_url;
+        resultBox.style.display = 'block';
+        resultBox.scrollIntoView({ behavior: 'smooth' });
+      } catch (err) {
+        alert('Erro de conexao');
+      }
+    });
+
+    function copyPasteUrl() {
+      const el = document.getElementById('pasteUrl');
+      el.select();
+      navigator.clipboard.writeText(el.value);
+    }
+  </script>
+</body>
+<script src="/static/wavy-canvas.js"></script>
+<script src="/static/animations.js"></script>
+</html>

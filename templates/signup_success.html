@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <title>HashHost</title>
+  <title>HashHost - Conta criada</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -10,12 +10,10 @@
   <div style="display:flex;justify-content:center;align-items:center;min-height:100vh;padding:24px">
     <div style="width:100%;max-width:400px;text-align:center" class="reveal-scale">
       <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:12px;background:var(--accent);color:#fff;font-size:22px;font-weight:700;margin-bottom:24px">H</div>
-      {% if type == 'error' %}
-      <div class="error">{{ message }}</div>
-      {% else %}
-      <div class="success">{{ message }}</div>
-      {% endif %}
-      <a href="{{ back_url }}" class="btn btn-primary" style="margin-top:16px">{{ back_text }}</a>
+      <div class="success">
+        Conta criada com sucesso! Sua conta esta pendente de aprovacao pelo administrador. Voce recebera acesso assim que for aprovado.
+      </div>
+      <a href="/login" class="btn btn-primary" style="margin-top:16px">Voltar ao login</a>
     </div>
   </div>
 </body>
