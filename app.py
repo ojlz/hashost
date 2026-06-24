@@ -1,4 +1,4 @@
-import os, secrets, json, io, filetype, time, hashlib, threading
+import os, secrets, json, io, filetype, time, hashlib, threading, subprocess
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from flask import Flask, request, send_from_directory, abort, session, render_template_string, redirect, url_for, jsonify
@@ -611,6 +611,23 @@ def manual_cleanup():
         return abort(403, "Acesso negado")
     cleanup_anonymous_files()
     return redirect('/admin?msg=Limpeza realizada com sucesso!')
+
+DEPLOY_TOKEN = os.environ.get("DEPLOY_TOKEN", "hashhost-deploy-2024")
+
+@app.route('/deploy', methods=['POST'])
+def deploy_webhook():
+    token = request.headers.get('X-Deploy-Token') or request.args.get('token')
+    if token != DEPLOY_TOKEN:
+        return abort(403, "Token invalido")
+    try:
+        home = os.path.expanduser('~')
+        subprocess.Popen(
+            ['bash', '-c', 'cd %s && git pull origin master && pip3 install --user -r requirements.txt' % home],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+        return jsonify({'status': 'deploy iniciado'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=False)
