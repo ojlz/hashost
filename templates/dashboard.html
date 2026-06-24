@@ -48,9 +48,9 @@
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="container page-enter">
     <div class="header">
-      <div class="logo">H<span>Host</span></div>
+      <div class="logo glitch" data-text="HHost">H<span>Host</span></div>
       <div class="nav">
         <a href="/tools" class="btn btn-ghost">Tools</a>
         {% if is_admin %}
@@ -64,7 +64,7 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card reveal">
       <h2>Enviar arquivo</h2>
       <p style="color:var(--text2);font-size:14px;margin-bottom:20px">Arraste ou selecione um arquivo para enviar.</p>
 
@@ -177,4 +177,5 @@
   </script>
 </body>
 <script src="/static/wavy-canvas.js"></script>
+<script src="/static/animations.js"></script>
 </html>

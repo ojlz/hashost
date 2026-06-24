@@ -52,14 +52,14 @@
 <body>
   <div class="container">
     <div class="header">
-      <a href="/tools" class="logo">H<span>Host</span></a>
+      <a href="/tools" class="logo glitch" data-text="HHost">H<span>Host</span></a>
       <div class="nav">
         <a href="/p/{{ paste_id }}/raw" class="btn btn-secondary btn-sm">Raw</a>
         <a href="/tools/pastebin" class="btn btn-ghost btn-sm">Novo paste</a>
       </div>
     </div>
 
-    <div class="card">
+    <div class="card reveal">
       <h1 style="margin-bottom:8px">{{ title }}</h1>
       <p style="color:var(--text2);font-size:13px">Criado em {{ created_date }} / {{ syntax }}</p>
 
@@ -89,4 +89,5 @@
   </div>
 </body>
 <script src="/static/wavy-canvas.js"></script>
+<script src="/static/animations.js"></script>
 </html>

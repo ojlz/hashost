@@ -22,7 +22,7 @@
 <body>
   <div class="container">
     <div class="header">
-      <a href="/" class="logo">H<span>Host</span></a>
+      <a href="/" class="logo glitch" data-text="HHost">H<span>Host</span></a>
       <div class="nav">
         <a href="/admin/create_user" class="btn btn-primary btn-sm">Novo usuario</a>
         <a href="/admin/cleanup" class="btn btn-secondary btn-sm">Limpar anonimos</a>
@@ -32,7 +32,7 @@
 
     <h1 style="margin-bottom:24px">Painel administrativo</h1>
 
-    <div class="grid">
+    <div class="grid stagger-children reveal">
       <div class="card stat-card">
         <div class="stat">{{ total_files }}</div>
         <div class="stat-label">Arquivos</div>
@@ -91,4 +91,5 @@
   </div>
 </body>
 <script src="/static/wavy-canvas.js"></script>
+<script src="/static/animations.js"></script>
 </html>
