@@ -7,7 +7,17 @@ import bleach
 import bcrypt
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
+SECRET_KEY_FILE = '.secret_key'
+def get_secret_key():
+    if os.path.exists(SECRET_KEY_FILE):
+        with open(SECRET_KEY_FILE, 'r') as f:
+            return f.read().strip()
+    key = secrets.token_hex(32)
+    with open(SECRET_KEY_FILE, 'w') as f:
+        f.write(key)
+    return key
+
+app.secret_key = os.environ.get("SECRET_KEY") or get_secret_key()
 UPLOAD_FOLDER = 'uploads'
 TOOLS_FOLDER = 'tools_data'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
