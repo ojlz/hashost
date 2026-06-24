@@ -769,6 +769,8 @@ def api_upload():
 
     title = sanitize_text(request.form.get('title', '').strip()) or random.choice(RANDOM_UPLOAD_TITLES)
     description = request.form.get('description', '').strip() or ''
+    if not description:
+        description = user.get('profile', {}).get('api_description', 'Compartilhado via HashHost')
     embed_color = request.form.get('embed_color', '#0070f3')
     file_lifetime = request.form.get('file_lifetime', '0')
 
@@ -1222,6 +1224,13 @@ def account():
             users[username]['api_token'] = secrets.token_urlsafe(32)
             save_json('users.json', users)
             success = "Token regenerado com sucesso"
+
+        elif action == 'update_api_description':
+            profile = users[username].get('profile', {})
+            profile['api_description'] = sanitize_text(request.form.get('api_description', '').strip())
+            users[username]['profile'] = profile
+            save_json('users.json', users)
+            success = "Descrição da API atualizada"
 
         users = load_users()
         user = users.get(username, {})

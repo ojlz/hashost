@@ -82,8 +82,13 @@
 
     <div class="card reveal" style="margin-top:16px">
       <div class="section">
-        <h2 class="section-title">API Token</h2>
-        <p style="color:var(--text2);font-size:12px;margin-bottom:12px">Use este token no ShareX, OBS ou qualquer app de upload.</p>
+        <h2 class="section-title">API Upload</h2>
+        <p style="color:var(--text2);font-size:12px;margin-bottom:12px">Configure o upload automático via ShareX, OBS ou qualquer app de upload por API.</p>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px">
+          <div style="color:var(--text2);margin-bottom:4px">Endpoint</div>
+          <code style="color:var(--text1);font-family:monospace;font-size:12px">POST {{ DOMAIN }}/api/upload</code>
+        </div>
+        <div style="color:var(--text2);font-size:12px;margin-bottom:8px">Token de autenticação</div>
         <div style="display:flex;gap:8px;align-items:center">
           <input type="text" value="{{ api_token }}" readonly id="apiTokenInput"
             style="flex:1;padding:8px 12px;font-family:monospace;font-size:12px;background:var(--surface2);color:var(--text1);border:1px solid var(--border);border-radius:6px">
@@ -93,6 +98,18 @@
           <input type="hidden" name="action" value="regenerate_token">
           <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Gerar novo token? O token antigo será invalidado.')">Gerar novo token</button>
         </form>
+        <div style="margin-top:16px">
+          <div style="color:var(--text2);font-size:12px;margin-bottom:8px">Descrição do embed via API</div>
+          <p style="color:var(--text3);font-size:11px;margin-bottom:8px">Usada quando o upload é feito pela API. Uploads manuais usam a descrição que você preencher no formulário.</p>
+          <form method="POST">
+            <input type="hidden" name="action" value="update_api_description">
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="text" name="api_description" value="{{ profile.api_description | default('Compartilhado via HashHost') }}" placeholder="Compartilhado via HashHost"
+                style="flex:1;padding:8px 12px;font-size:13px;background:var(--surface2);color:var(--text1);border:1px solid var(--border);border-radius:6px">
+              <button type="submit" class="btn btn-primary btn-sm">Salvar</button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
 
