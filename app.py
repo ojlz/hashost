@@ -780,6 +780,7 @@ def _build_info_page(data, actual_id):
         embed_author_url=profile.get('embed_author_url', ''),
         embed_footer=profile.get('embed_footer', ''),
         avatar_url=profile.get('avatar_url', ''),
+        display_name=profile.get('display_name', ''),
     )
 
 
@@ -827,6 +828,7 @@ def _build_embed_page(data, actual_id, filepath):
         embed_author_url=profile.get('embed_author_url', ''),
         embed_footer=profile.get('embed_footer', ''),
         avatar_url=profile.get('avatar_url', ''),
+        display_name=profile.get('display_name', ''),
     )
 
     response = app.response_class(html, 200, mimetype='text/html; charset=utf-8')

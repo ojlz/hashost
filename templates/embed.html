@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta property="og:type" content="article">
   <meta property="og:title" content="{{ title }}">
   <meta property="og:description" content="{{ description }}">
@@ -15,28 +16,264 @@
   {% if embed_author %}
   <meta property="article:author" content="{{ embed_author }}">
   {% endif %}
-  {% if avatar_url %}
-  <meta property="og:image:avatar" content="{{ avatar_url }}">
-  {% endif %}
   <title>{{ title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0a;
+      color: #ededed;
+      font-family: 'JetBrains Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse at 30% 20%, {{ embed_color }}15 0%, transparent 50%),
+                  radial-gradient(ellipse at 70% 80%, {{ embed_color }}08 0%, transparent 50%);
+      z-index: 0;
+      animation: bgPulse 8s ease-in-out infinite alternate;
+    }
+    @keyframes bgPulse {
+      0% { opacity: 0.6; transform: scale(1); }
+      100% { opacity: 1; transform: scale(1.05); }
+    }
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 720px;
+      width: 100%;
+      animation: fadeUp 0.5s ease-out;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .card {
+      background: rgba(17, 17, 17, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .profile-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid {{ embed_color }};
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .avatar-placeholder {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: {{ embed_color }}30;
+      border: 2px solid {{ embed_color }};
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      color: {{ embed_color }};
+      flex-shrink: 0;
+    }
+    .profile-info { flex: 1; min-width: 0; }
+    .profile-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ededed;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .profile-author {
+      font-size: 12px;
+      color: #666;
+    }
+    .profile-author a {
+      color: {{ embed_color }};
+      text-decoration: none;
+    }
+    .profile-author a:hover { text-decoration: underline; }
+    .media-section {
+      padding: 20px;
+      text-align: center;
+    }
+    .media-section img {
+      max-width: 100%;
+      max-height: 70vh;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.06);
+      display: block;
+      margin: 0 auto;
+    }
+    .media-section video {
+      max-width: 100%;
+      max-height: 70vh;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.06);
+      display: block;
+      margin: 0 auto;
+    }
+    .content-section {
+      padding: 0 20px 20px;
+    }
+    .title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ededed;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+    .title .accent { color: {{ embed_color }}; }
+    .description {
+      font-size: 13px;
+      color: #888;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      padding: 0 20px 20px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-ghost {
+      background: rgba(255,255,255,0.05);
+      color: #ededed;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .btn-ghost:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.2);
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: {{ embed_color }};
+      color: #fff;
+    }
+    .btn-primary:hover {
+      filter: brightness(1.15);
+      text-decoration: none;
+    }
+    .footer-section {
+      padding: 12px 20px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      text-align: center;
+    }
+    .footer-text {
+      font-size: 11px;
+      color: #555;
+    }
+    .footer-text a {
+      color: {{ embed_color }};
+      text-decoration: none;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 16px;
+      opacity: 0.3;
+    }
+    .brand-text {
+      font-size: 11px;
+      color: #555;
+      letter-spacing: 0.1em;
+    }
+  </style>
 </head>
-<body style="margin:0;padding:20px;background:#000;color:#ededed;text-align:center;font-family:'JetBrains Mono',monospace">
-  <h1 style="font-size:24px;font-weight:600;margin-bottom:16px;color:#ededed">{{ title }}</h1>
-  {% if embed_author %}
-  <p style="color:#888;font-size:12px;margin-bottom:8px">
-    {% if embed_author_url %}<a href="{{ embed_author_url }}" style="color:var(--accent);text-decoration:none">{{ embed_author }}</a>{% else %}{{ embed_author }}{% endif %}
-  </p>
-  {% endif %}
-  <p style="color:#888;margin:16px 0;font-size:14px">{{ description }}</p>
+<body>
+  <div class="container">
+    <div class="card">
+      {% if display_name or embed_author or avatar_url %}
+      <div class="profile-bar">
+        {% if avatar_url %}
+          <img src="{{ avatar_url }}" alt="" class="avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div class="avatar-placeholder" style="display:none">{{ display_name[:1] or embed_author[:1] or '?' }}</div>
+        {% elif display_name or embed_author %}
+          <div class="avatar-placeholder">{{ display_name[:1] or embed_author[:1] or '?' }}</div>
+        {% endif %}
+        <div class="profile-info">
+          {% if display_name %}
+            <div class="profile-name">{{ display_name }}</div>
+          {% endif %}
+          {% if embed_author %}
+            <div class="profile-author">
+              {% if embed_author_url %}<a href="{{ embed_author_url }}" target="_blank">{{ embed_author }}</a>{% else %}{{ embed_author }}{% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
 
-  {{ media_html | safe }}
+      <div class="media-section">
+        {{ media_html | safe }}
+      </div>
 
-  <div style="margin-top:24px">
-    <a href="{{ info_link }}" style="background:#1a1a1a;color:#ededed;padding:10px 20px;border-radius:8px;text-decoration:none;margin:0 8px;font-size:14px;border:1px solid #333">Info</a>
-    <a href="{{ raw_link }}" style="background:#0070f3;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;margin:0 8px;font-size:14px">Link direto</a>
+      <div class="content-section">
+        <h1 class="title"><span class="accent">//</span> {{ title }}</h1>
+        {% if description %}
+          <p class="description">{{ description }}</p>
+        {% endif %}
+      </div>
+
+      <div class="actions">
+        <a href="{{ info_link }}" class="btn btn-ghost">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          Informações
+        </a>
+        <a href="{{ raw_link }}" class="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Link direto
+        </a>
+      </div>
+
+      {% if embed_footer %}
+      <div class="footer-section">
+        <p class="footer-text">{{ embed_footer }}</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="brand">
+      <span class="brand-text">HASHHOST</span>
+    </div>
   </div>
-  {% if embed_footer %}
-  <p style="color:#555;font-size:11px;margin-top:24px">{{ embed_footer }}</p>
-  {% endif %}
 </body>
 </html>

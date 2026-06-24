@@ -20,6 +20,11 @@
       padding: 16px;
       border-radius: 8px;
       border-left: 3px solid {{ embed_color }};
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .info-item:hover {
+      transform: translateY(-2px);
+      border-left-color: {{ embed_color }};
     }
     .info-label {
       color: var(--text2);
@@ -29,6 +34,52 @@
       margin-bottom: 4px;
     }
     .info-value { font-size: 15px; font-weight: 500; }
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+      background: var(--surface2);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+    .profile-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 2px solid {{ embed_color }};
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .profile-avatar-placeholder {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: {{ embed_color }}30;
+      border: 2px solid {{ embed_color }};
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: {{ embed_color }};
+      flex-shrink: 0;
+    }
+    .profile-details { flex: 1; }
+    .profile-display-name {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .profile-username {
+      font-size: 13px;
+      color: var(--text2);
+    }
+    .profile-username a {
+      color: {{ embed_color }};
+      text-decoration: none;
+    }
+    .profile-username a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -39,6 +90,29 @@
     </div>
 
     <div class="card reveal">
+      {% if display_name or embed_author or avatar_url %}
+      <div class="profile-header">
+        {% if avatar_url %}
+          <img src="{{ avatar_url }}" alt="" class="profile-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div class="profile-avatar-placeholder" style="display:none">{{ display_name[:1] or embed_author[:1] or '?' }}</div>
+        {% elif display_name or embed_author %}
+          <div class="profile-avatar-placeholder">{{ display_name[:1] or embed_author[:1] or '?' }}</div>
+        {% endif %}
+        <div class="profile-details">
+          {% if display_name %}
+            <div class="profile-display-name">{{ display_name }}</div>
+          {% endif %}
+          <div class="profile-username">
+            {{ username }}
+            {% if embed_author %}
+              &middot;
+              {% if embed_author_url %}<a href="{{ embed_author_url }}" target="_blank">{{ embed_author }}</a>{% else %}{{ embed_author }}{% endif %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
       <h1 style="margin-bottom:16px">{{ title }}</h1>
 
       <div style="text-align:center;margin:20px 0">
@@ -52,7 +126,7 @@
         </div>
         <div class="info-item">
           <div class="info-label">Enviado por</div>
-          <div class="info-value">{{ username }}</div>
+          <div class="info-value">{{ display_name or username }}</div>
         </div>
         <div class="info-item">
           <div class="info-label">Data</div>
