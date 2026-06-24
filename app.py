@@ -387,6 +387,30 @@ def generate_invite_code():
     return secrets.token_urlsafe(24)
 
 
+ALL_INVITE_PERMISSIONS = ['is_team', 'can_create_invites', 'can_change_title',
+                          'can_use_hashbin', 'can_change_password', 'can_choose_embed_color']
+
+
+def extract_invite_permissions(form, creator_perms):
+    """Extract permissions from form, respecting creator's permission level."""
+    perms = {}
+    is_creator_admin = creator_perms.get('is_admin', False)
+
+    for perm in ALL_INVITE_PERMISSIONS:
+        if form.get('perm_' + perm) == '1':
+            if is_creator_admin or creator_perms.get(perm, False):
+                perms[perm] = True
+
+    file_lifetime = form.getlist('perm_file_lifetime') or ['0']
+    perms['file_lifetime'] = file_lifetime
+
+    perms['is_admin'] = False
+    perms['invite_count'] = 0
+    perms['hashbin_lifetime'] = ['0']
+
+    return perms
+
+
 def cleanup_expired_files():
     try:
         short_urls = load_json('short_urls.json')
@@ -544,6 +568,12 @@ def signup():
                 user_permissions = invite_perms.copy()
             else:
                 user_permissions = MINIMAL_PERMISSIONS.copy()
+
+            user_permissions['is_admin'] = False
+            if user_permissions.get('can_create_invites', False) and 'invite_count' not in user_permissions:
+                user_permissions['invite_count'] = 3
+            if not user_permissions.get('can_create_invites', False):
+                user_permissions['invite_count'] = 0
 
             users[username] = {
                 'password_hash': hash_password(password),
@@ -1165,13 +1195,18 @@ def account():
                     while code in invites:
                         code = generate_invite_code()
                     max_uses = int(request.form.get('max_uses', 1) or 1)
+                    if max_uses < -1 or max_uses == 0:
+                        max_uses = 1
+                    if max_uses > 50:
+                        max_uses = 50
+                    invite_perms = extract_invite_permissions(request.form, perms)
                     invites[code] = {
                         'created_by': username,
                         'created_at': datetime.now().isoformat(),
                         'used': False,
                         'used_by': None,
                         'expires': None,
-                        'permissions': None,
+                        'permissions': invite_perms,
                         'max_uses': max_uses,
                         'use_count': 0,
                     }
@@ -1262,6 +1297,7 @@ def account():
         invites=user_invites,
         user_files=user_files,
         DOMAIN=DOMAIN,
+        file_lifetime_options=FILE_LIFETIME_OPTIONS,
         error=error,
         success=success,
     )
@@ -1320,6 +1356,7 @@ def admin_panel():
         total_views=total_views,
         top_users=top_users_data,
         invites=invites,
+        file_lifetime_options=FILE_LIFETIME_OPTIONS,
     )
 
 
@@ -1505,38 +1542,36 @@ def generate_invite():
     if admin_perms.get('invite_count', 0) == 0:
         return jsonify({'error': 'Limite de invites atingido'})
 
-    count = int(request.form.get('count', 1) or 1)
-    max_count = admin_perms.get('invite_count', 0)
-    if max_count > 0:
-        count = min(count, max_count)
-
     max_uses = int(request.form.get('max_uses', 1) or 1)
+    if max_uses < -1 or max_uses == 0:
+        max_uses = 1
+    if max_uses > 50:
+        max_uses = 50
+
+    invite_perms = extract_invite_permissions(request.form, admin_perms)
 
     invites = load_json('invites.json')
-    created = []
-
-    for _ in range(count):
+    code = generate_invite_code()
+    while code in invites:
         code = generate_invite_code()
-        while code in invites:
-            code = generate_invite_code()
-        invites[code] = {
-            'created_by': session['username'],
-            'created_at': datetime.now().isoformat(),
-            'used': False,
-            'used_by': None,
-            'expires': None,
-            'permissions': None,
-            'max_uses': max_uses,
-            'use_count': 0,
-        }
-        created.append(code)
 
-    if max_count > 0:
-        users[session['username']]['permissions']['invite_count'] = max(0, max_count - count)
+    invites[code] = {
+        'created_by': session['username'],
+        'created_at': datetime.now().isoformat(),
+        'used': False,
+        'used_by': None,
+        'expires': None,
+        'permissions': invite_perms,
+        'max_uses': max_uses,
+        'use_count': 0,
+    }
+
+    if admin_perms.get('invite_count', 0) > 0:
+        users[session['username']]['permissions']['invite_count'] = max(0, admin_perms['invite_count'] - 1)
 
     save_json('invites.json', invites)
     save_json('users.json', users)
-    return jsonify({'success': True, 'invites': created})
+    return jsonify({'success': True, 'invites': [code]})
 
 
 @app.route('/admin/delete_invite/<code>', methods=['POST'])

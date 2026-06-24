@@ -121,18 +121,48 @@
     <div class="card" style="margin-top:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <h2>Invites</h2>
-        <form id="inviteForm" style="display:flex;gap:8px;align-items:center">
-          <input type="number" name="count" value="1" min="1" max="10" style="width:80px;padding:6px 10px;font-size:13px">
-          <select name="max_uses" style="padding:6px 10px;font-size:13px;background:var(--surface2);color:var(--text1);border:1px solid var(--border);border-radius:6px">
-            <option value="1">1 uso</option>
-            <option value="3">3 usos</option>
-            <option value="5">5 usos</option>
-            <option value="10">10 usos</option>
-            <option value="-1">Ilimitado</option>
-          </select>
-          <button type="submit" class="btn btn-primary btn-sm">Gerar invite</button>
-        </form>
       </div>
+      <form id="inviteForm" style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <label style="color:var(--text2);font-size:12px;white-space:nowrap">Usos:</label>
+          <input type="number" name="max_uses" value="1" min="1" max="50" style="width:70px;padding:6px 10px;font-size:13px;background:var(--surface);color:var(--text1);border:1px solid var(--border);border-radius:6px">
+          <span style="color:var(--text3);font-size:11px">ou -1 para &#8734;</span>
+        </div>
+        <div>
+          <div style="color:var(--text2);font-size:12px;margin-bottom:8px">Permissões do convidado</div>
+          <div class="grid" style="grid-template-columns:1fr 1fr;gap:6px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;color:var(--text2)">
+              <input type="checkbox" name="perm_is_team" value="1"> Equipe
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;color:var(--text2)">
+              <input type="checkbox" name="perm_can_create_invites" value="1"> Criar invites
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;color:var(--text2)">
+              <input type="checkbox" name="perm_can_change_title" value="1" checked> Alterar título
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;color:var(--text2)">
+              <input type="checkbox" name="perm_can_use_hashbin" value="1"> HashBin
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;color:var(--text2)">
+              <input type="checkbox" name="perm_can_change_password" value="1" checked> Alterar senha
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;color:var(--text2)">
+              <input type="checkbox" name="perm_can_choose_embed_color" value="1" checked> Cor do embed
+            </label>
+          </div>
+          <div style="margin-top:8px">
+            <label style="color:var(--text2);font-size:12px">Vida útil das mídias</label>
+            <select name="perm_file_lifetime" multiple size="4" style="width:100%;height:auto;margin-top:4px;padding:6px;font-size:12px;background:var(--surface);color:var(--text1);border:1px solid var(--border);border-radius:6px">
+              {% for opt in file_lifetime_options %}
+              <option value="{{ opt.value }}" {% if opt.value == '0' %}selected{% endif %}>{{ opt.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div>
+          <button type="submit" class="btn btn-primary btn-sm">Gerar invite</button>
+        </div>
+      </form>
       {% if invites %}
         {% for code, invite in invites.items() %}
         <div class="invite-item" ondblclick="navigator.clipboard.writeText(window.location.origin+'/iv/{{ code }}').then(()=>this.querySelector('.copy-feedback').textContent='Copiado!')">
@@ -150,13 +180,25 @@
             </div>
             <div style="font-size:11px;color:var(--text2);margin-top:2px">
               {% if invite.max_uses is defined and invite.max_uses == -1 %}
-                Usos: {{ invite.use_count }} / ∞
+                Usos: {{ invite.use_count }} / &#8734;
               {% elif invite.max_uses is defined %}
                 Usos: {{ invite.use_count }} / {{ invite.max_uses }}
               {% else %}
                 Uso único
               {% endif %}
             </div>
+            {% if invite.permissions %}
+            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
+              {% for perm, val in invite.permissions.items() %}
+                {% if val == true and perm != 'file_lifetime' %}
+                <span style="background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:10px;color:var(--text2)">{{ perm }}</span>
+                {% endif %}
+              {% endfor %}
+              {% if invite.permissions.file_lifetime is defined %}
+              <span style="background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:10px;color:var(--text2)">lifetime: {{ invite.permissions.file_lifetime | join(', ') }}</span>
+              {% endif %}
+            </div>
+            {% endif %}
           </div>
           {% if not invite.used %}
           <div style="display:flex;gap:4px">
