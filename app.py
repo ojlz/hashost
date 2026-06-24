@@ -74,7 +74,7 @@ DANGEROUS_EXTENSIONS = {
     '.exe', '.bat', '.cmd', '.com', '.scr', '.pif', '.vbs', '.js', '.jar',
     '.php', '.asp', '.jsp', '.sh', '.py', '.pl', '.rb', '.html', '.htm', '.svg'
 }
-VIDEO_EXTENSIONS = {'.mp4', '.webm', '.avi', '.mov'}
+VIDEO_EXTENSIONS = ('.mp4', '.webm', '.avi', '.mov')
 
 FILE_LIFETIME_OPTIONS = [
     {'value': '1h', 'label': '1 hora', 'seconds': 3600},
