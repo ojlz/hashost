@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Estatísticas - Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--accent:#58a6ff;--accent2:#1f6feb;--text:#f0f6fc;--text2:#8b949e;--success:#238636;--danger:#da3633;--warning:#9e6a03;--border:#30363d}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:20px}
+        .container{max-width:1200px;margin:0 auto}
+        .header{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+        .title{font-size:24px;font-weight:600;color:var(--accent);display:flex;align-items:center;gap:12px}
+        .btn{background:var(--accent2);color:white;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:500;transition:all 0.2s}
+        .btn:hover{background:var(--accent);transform:translateY(-1px)}
+        .btn.secondary{background:var(--bg3);border:1px solid var(--border)}
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+        .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
+        .stat-icon{font-size:32px;margin-bottom:12px}
+        .stat-number{font-size:28px;font-weight:700;margin-bottom:4px}
+        .stat-label{color:var(--text2);font-size:14px}
+        .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:24px}
+        .card-title{color:var(--accent);font-size:18px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+        .table{width:100%;border-collapse:collapse}
+        .table th,.table td{padding:12px;text-align:left;border-bottom:1px solid var(--border)}
+        .table th{background:var(--bg3);color:var(--text);font-weight:600}
+        .table td{color:var(--text)}
+        .table tr:hover{background:rgba(88,166,255,0.05)}
+        .progress-bar{background:var(--bg3);height:8px;border-radius:4px;overflow:hidden;margin-top:4px}
+        .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--success));border-radius:4px}
+        @media(max-width:768px){.header{flex-direction:column;text-align:center}.stats-grid{grid-template-columns:repeat(2,1fr)}.table{font-size:12px}.table th,.table td{padding:8px}}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">
+                <i class="fas fa-chart-line"></i>
+                Estatísticas do Sistema
+            </div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+                <a href="/admin/users" class="btn secondary">
+                    <i class="fas fa-users-cog"></i> Gerenciar Usuários
+                </a>
+                <a href="/" class="btn secondary">
+                    <i class="fas fa-home"></i> Início
+                </a>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="color:var(--accent)">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-number" style="color:var(--accent)">{{ users|length }}</div>
+                <div class="stat-label">Usuários</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="color:var(--success)">
+                    <i class="fas fa-upload"></i>
+                </div>
+                <div class="stat-number" style="color:var(--success)">{{ urls|length }}</div>
+                <div class="stat-label">Total Uploads</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="color:var(--warning)">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-number" style="color:var(--warning)">{{ temp_files }}</div>
+                <div class="stat-label">Arquivos Temporários</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="color:var(--danger)">
+                    <i class="fas fa-hdd"></i>
+                </div>
+                <div class="stat-number" style="color:var(--danger)">{{ "%.1f"|format(total_size_mb) }}</div>
+                <div class="stat-label">MB Utilizados</div>
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px">
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-trophy"></i>
+                    Ranking de Usuários
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Usuário</th>
+                            <th>Uploads</th>
+                            <th>%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for username, count in user_uploads.items() | sort(attribute=1, reverse=true) %}
+                        <tr>
+                            <td>
+                                {{ username }}
+                                {% if users.get(username, {}).get('perms', {}).get('admin') %}
+                                <span style="color:var(--danger);font-size:12px">👑</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ count }}</td>
+                            <td>
+                                {{ "%.1f"|format((count / urls|length * 100) if urls|length > 0 else 0) }}%
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width:{{ (count / urls|length * 100) if urls|length > 0 else 0 }}%"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-info-circle"></i>
+                    Informações do Sistema
+                </div>
+                <table class="table">
+                    <tr>
+                        <td><i class="fas fa-server"></i> Status do Sistema</td>
+                        <td><span style="color:var(--success)">🟢 Online</span></td>
+                    </tr>
+                    <tr>
+                        <td><i class="fas fa-shield-alt"></i> Uploads Seguros</td>
+                        <td><span style="color:var(--success)">✅ Ativo</span></td>
+                    </tr>
+                    <tr>
+                        <td><i class="fas fa-clock"></i> Rate Limiting</td>
+                        <td><span style="color:var(--success)">✅ Ativo</span></td>
+                    </tr>
+                    <tr>
+                        <td><i class="fas fa-trash"></i> Limpeza Automática</td>
+                        <td><span style="color:var(--success)">✅ Rodando</span></td>
+                    </tr>
+                    <tr>
+                        <td><i class="fas fa-users"></i> Admins Ativos</td>
+                        <td>{{ users.values() | selectattr('perms.admin') | list | length }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fas fa-star"></i> Usuários Premium</td>
+                        <td>{{ users.values() | selectattr('perms.premium_files') | list | length }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <i class="fas fa-history"></i>
+                Últimos Uploads
+            </div>
+            <div style="overflow-x:auto">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Arquivo</th>
+                            <th>Usuário</th>
+                            <th>Tamanho</th>
+                            <th>Data</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for url_id, data in urls.items() | sort(attribute='1.time', reverse=true) %}
+                        {% if loop.index <= 10 %}
+                        <tr>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:8px">
+                                    {% if data.filename.endswith(('.jpg','.jpeg','.png','.gif','.webp')) %}
+                                    <i class="fas fa-image" style="color:var(--accent)"></i>
+                                    {% elif data.filename.endswith(('.mp4','.avi','.mov')) %}
+                                    <i class="fas fa-video" style="color:var(--success)"></i>
+                                    {% elif data.filename.endswith(('.mp3','.wav','.flac')) %}
+                                    <i class="fas fa-music" style="color:var(--warning)"></i>
+                                    {% else %}
+                                    <i class="fas fa-file" style="color:var(--text2)"></i>
+                                    {% endif %}
+                                    <div>
+                                        <div>{{ data.title[:30] }}{% if data.title|length > 30 %}...{% endif %}</div>
+                                        <div style="font-size:12px;color:var(--text2)">{{ data.original_name[:20] }}{% if data.original_name|length > 20 %}...{% endif %}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {{ data.username }}
+                                {% if data.username != 'guest' and users.get(data.username, {}).get('perms', {}).get('admin') %}
+                                <span style="color:var(--danger);font-size:12px">👑</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ "%.2f"|format(data.file_size / 1024 / 1024) }} MB</td>
+                            <td>{{ data.time[:16].replace('T', ' ') }}</td>
+                            <td>
+                                {% if 'expires' in data %}
+                                <span style="color:var(--warning)">⏰ Temporário</span>
+                                {% else %}
+                                <span style="color:var(--success)">✅ Permanente</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="/view/{{ url_id }}" class="btn btn-small secondary" target="_blank" style="padding:4px 8px;font-size:12px">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
