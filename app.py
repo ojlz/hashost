@@ -4,6 +4,7 @@ import secrets
 import json
 import io
 import time
+import random
 import hashlib
 import threading
 import subprocess
@@ -84,6 +85,48 @@ FILE_LIFETIME_OPTIONS = [
     {'value': '1w', 'label': '1 semana', 'seconds': 604800},
     {'value': '1M', 'label': '1 mês', 'seconds': 2592000},
     {'value': '0', 'label': 'Permanente', 'seconds': 0},
+]
+
+RANDOM_UPLOAD_TITLES = [
+    "Imagem subiu, servidor caiu🤣🔥📸",
+    "Funciona até parar de funcionar",
+    "HH, Upload rápido, manutenção lenta.",
+    "🔥 Upload subiu. Temperatura também.",
+    "😎 Rodando em hardware que pediu aposentadoria.",
+    "Se o servidor cair, finja que está em manutenção.",
+    "📸 Hospedando imagens e arrependimentos.",
+    "HashHost, Enviando pixels na força do ódio 🤳",
+    "Se funcionar, não mexe.",
+    "😎 Feito com Flask e decisões ruins.",
+    "Hospedagem premium de procedência duvidosa.",
+    "🤑 Infraestrutura avaliada em um pastel e uma coca.",
+    "A imagem carrega, normalmente...",
+    "Mais um pixel no infinito.",
+    "Upload concluído antes que o café esfrie.",
+    "Isso é arte? O servidor acha que sim.",
+    "Salvo. Pelo menos por agora.",
+    "Transferido com fé e ping alto.",
+]
+
+RANDOM_HASHBIN_TITLES = [
+    "📝 Seu bug agora é público.",
+    "Armazenando código que nem o autor entende.",
+    "☎️ Este texto sobreviverá mais que seu projeto.",
+    "Cole aqui e finja que está documentado.",
+    "100% livre de organização.",
+    "Hash, aqui nascem as gambiarras.",
+    "Código temporário, consequências permanentes.",
+    "Nem o Ctrl+Z salva isso.",
+    "Copiado, colado, rezado.",
+    "Funciona no meu computador™.",
+    "Estilo Gambiarra™.",
+    "Código feio, mas funciona.",
+    "Aposto que ninguém vai ler isso aqui.",
+    "Isso aqui é arte abstrata.",
+    "Se deletar, suma com provas.",
+    "Bug disfarçado de feature.",
+    "Gambiarra level: production.",
+    "Isso é documentação? Não, é arte.",
 ]
 
 DEFAULT_PERMISSIONS = {
@@ -280,9 +323,9 @@ def is_safe_file(file_content, filename, allow_video=False):
 
     max_size = 100 * 1024 * 1024 if allow_video else 20 * 1024 * 1024
     if len(file_content) < 100:
-        return False, "Arquivo muito pequeno"
+        return False, "Mídia muito pequena"
     if len(file_content) > max_size:
-        return False, "Arquivo muito grande (máximo %dMB)" % (max_size // 1024 // 1024)
+        return False, "Mídia muito grande (máximo %dMB)" % (max_size // 1024 // 1024)
 
     try:
         kind = filetype.guess(file_content)
@@ -293,7 +336,7 @@ def is_safe_file(file_content, filename, allow_video=False):
             img = Image.open(io.BytesIO(file_content))
             img.verify()
     except Exception as e:
-        return False, "Arquivo inválido: %s" % str(e)
+        return False, "Mídia inválida: %s" % str(e)
 
     lower = file_content.lower()
     for pattern in [b'<script', b'javascript:', b'vbscript:', b'onload=', b'onerror=']:
@@ -356,7 +399,7 @@ def cleanup_expired_files():
         if to_remove:
             save_json('short_urls.json', short_urls)
     except Exception as e:
-        print("Erro na limpeza de arquivos: %s" % e)
+            print("Erro na limpeza de mídias: %s" % e)
 
 
 def cleanup_expired_pastes():
@@ -577,7 +620,7 @@ def upload_file():
         return abort(429, message)
 
     if 'file' not in request.files or request.files['file'].filename == '':
-        return "Erro: Nenhum arquivo enviado", 400
+        return "Erro: Nenhuma mídia enviada", 400
 
     file = request.files['file']
     file_content = file.read()
@@ -589,9 +632,9 @@ def upload_file():
 
     is_safe, error_msg = is_safe_file(file_content, filename, allow_video=True)
     if not is_safe:
-        return "Arquivo rejeitado: %s" % error_msg, 400
+        return "Mídia rejeitada: %s" % error_msg, 400
 
-    title = sanitize_text(request.form.get('title', '').strip()) or 'Arquivo'
+    title = sanitize_text(request.form.get('title', '').strip()) or random.choice(RANDOM_UPLOAD_TITLES)
     description = request.form.get('description', '').strip() or ''
     embed_color = request.form.get('embed_color', '#0070f3')
     file_lifetime = request.form.get('file_lifetime', '0')
@@ -600,7 +643,7 @@ def upload_file():
         embed_color = '#0070f3'
 
     if not perms.get('can_change_title', True):
-        title = 'Arquivo'
+        title = random.choice(RANDOM_UPLOAD_TITLES)
 
     if not perms.get('can_choose_embed_color', True):
         embed_color = '#0070f3'
@@ -680,11 +723,11 @@ def short_url(short_id):
                 os.remove(filepath)
             del short_urls[actual_id]
             save_json('short_urls.json', short_urls)
-            return abort(404, "Arquivo expirado")
+            return abort(404, "Mídia expirada")
 
     filepath = os.path.join(UPLOAD_FOLDER, data['filename'])
     if not os.path.exists(filepath):
-        return abort(404, "Arquivo não encontrado")
+        return abort(404, "Mídia não encontrada")
 
     short_urls[actual_id]['views'] = data.get('views', 0) + 1
     save_json('short_urls.json', short_urls)
@@ -828,7 +871,7 @@ def hashbin_create():
         return jsonify({'error': 'Sem permissão para usar HashBin'})
 
     content = request.form.get('content', '').strip()
-    title = sanitize_text(request.form.get('title', 'Paste sem título'))
+    title = sanitize_text(request.form.get('title', '').strip()) or random.choice(RANDOM_HASHBIN_TITLES)
     syntax = request.form.get('syntax', 'text')
     try:
         expiry = int(request.form.get('expiry', 0) or 0)
@@ -890,7 +933,7 @@ def view_paste(paste_id):
         with open(paste_file, 'r', encoding='utf-8') as f:
             content = f.read()
     except FileNotFoundError:
-        return abort(404, "Arquivo não encontrado")
+        return abort(404, "Mídia não encontrada")
 
     created_date = datetime.fromisoformat(paste_data['created']).strftime('%d/%m/%Y às %H:%M')
     expires_text = (
@@ -923,7 +966,7 @@ def view_paste_raw(paste_id):
             content = f.read()
         return content, 200, {'Content-Type': 'text/plain; charset=utf-8'}
     except FileNotFoundError:
-        return abort(404, "Arquivo não encontrado")
+        return abort(404, "Mídia não encontrada")
 
 
 # ---------------------------------------------------------------------------
@@ -1016,7 +1059,7 @@ def account():
                 users = load_users()
                 users[username]['uploads'] = max(0, users[username].get('uploads', 0) - 1)
                 save_json('users.json', users)
-                success = "Arquivo removido"
+                success = "Mídia removida"
 
         elif action == 'update_profile':
             if not perms.get('is_team', False) and not perms.get('is_admin', False):
@@ -1048,7 +1091,7 @@ def account():
         if data.get('username') == username:
             user_files.append({
                 'short_id': sid,
-                'title': data.get('title', 'Arquivo'),
+                'title': data.get('title', 'Mídia'),
                 'original_filename': data.get('original_filename', ''),
                 'upload_time': data.get('upload_time', ''),
                 'views': data.get('views', 0),

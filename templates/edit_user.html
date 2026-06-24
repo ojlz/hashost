@@ -54,7 +54,7 @@
         </div>
 
         <div class="form-group" style="margin-top:16px">
-          <label>Vida útil dos arquivos</label>
+          <label>Vida útil das mídias</label>
           <select name="file_lifetime" multiple size="4" style="height:auto">
             {% for opt in file_lifetime_options %}
             <option value="{{ opt.value }}" {% if opt.value in user.permissions.file_lifetime %}selected{% endif %}>{{ opt.label }}</option>

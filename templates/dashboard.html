@@ -65,13 +65,13 @@
     </div>
 
     <div class="card reveal">
-      <h2>Enviar arquivo</h2>
-      <p style="color:var(--text2);font-size:14px;margin-bottom:20px">Arraste ou selecione um arquivo para enviar.</p>
+      <h2>Enviar mídia</h2>
+      <p style="color:var(--text2);font-size:14px;margin-bottom:20px">Arraste ou selecione uma mídia para enviar.</p>
 
       <form id="uploadForm" enctype="multipart/form-data">
         <div class="upload-zone" id="dropZone">
           <div style="font-size:36px;color:var(--text2)">+</div>
-          <p>Arraste o arquivo aqui ou clique para selecionar</p>
+          <p>Arraste a mídia aqui ou clique para selecionar</p>
           <input type="file" name="file" id="fileInput" style="display:none" accept="image/*,video/mp4,video/webm,audio/mpeg">
         </div>
 
@@ -113,7 +113,7 @@
       </form>
 
       <div class="result-box" id="resultBox">
-        <p style="font-size:14px;color:var(--text2);margin-bottom:8px">Arquivo enviado:</p>
+        <p style="font-size:14px;color:var(--text2);margin-bottom:8px">Mídia enviada:</p>
         <a id="resultLink" href="#"></a><br>
         <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="navigator.clipboard.writeText(document.getElementById('resultLink').href)">Copiar link</button>
       </div>
@@ -147,7 +147,7 @@
         e.preventDefault();
         e.stopPropagation();
         fi.value = '';
-        dz.querySelector('p').textContent = 'Arraste o arquivo aqui ou clique para selecionar';
+        dz.querySelector('p').textContent = 'Arraste a mídia aqui ou clique para selecionar';
         document.getElementById('previewBox').style.display = 'none';
       });
     }

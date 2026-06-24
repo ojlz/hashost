@@ -185,7 +185,7 @@
 
     <div class="card reveal" style="margin-top:16px">
       <div class="section">
-        <h2 class="section-title">Meus arquivos</h2>
+        <h2 class="section-title">Minhas mídias</h2>
         {% if user_files %}
           {% for f in user_files %}
           <div class="file-item">
@@ -206,13 +206,13 @@
               <form method="POST" style="display:inline">
                 <input type="hidden" name="action" value="delete_file">
                 <input type="hidden" name="short_id" value="{{ f.short_id }}">
-                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Remover este arquivo?')">Remover</button>
+                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Remover esta mídia?')">Remover</button>
               </form>
             </div>
           </div>
           {% endfor %}
         {% else %}
-          <p style="color:var(--text2);font-size:14px">Nenhum arquivo enviado.</p>
+          <p style="color:var(--text2);font-size:14px">Nenhuma mídia enviada.</p>
         {% endif %}
       </div>
     </div>
