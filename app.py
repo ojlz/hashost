@@ -372,6 +372,11 @@ def is_approved():
     return user.get('status') == 'approved'
 
 
+def is_approved_user(users, username):
+    user = users.get(username, {})
+    return user.get('status') == 'approved'
+
+
 def get_user_perms(username):
     users = load_users()
     user = users.get(username, {})
@@ -699,6 +704,137 @@ def upload_file():
     save_json('users.json', users)
 
     return "Upload concluído: %s/s/%s" % (DOMAIN, short_id)
+
+
+# ---------------------------------------------------------------------------
+# Routes — API Upload (para ShareX, etc)
+# ---------------------------------------------------------------------------
+def get_or_create_api_token(username):
+    users = load_users()
+    user = users.get(username, {})
+    token = user.get('api_token', '')
+    if not token:
+        token = secrets.token_urlsafe(32)
+        users[username]['api_token'] = token
+        save_json('users.json', users)
+    return token
+
+
+def get_user_by_api_token(token):
+    if not token:
+        return None
+    users = load_users()
+    for uname, udata in users.items():
+        if udata.get('api_token') == token:
+            return uname
+    return None
+
+
+@app.route('/api/upload', methods=['POST'])
+def api_upload():
+    auth = request.headers.get('Authorization', '')
+    token = ''
+    if auth.startswith('Bearer '):
+        token = auth[7:].strip()
+    if not token:
+        token = request.form.get('api_token', '').strip()
+    if not token:
+        return jsonify({'error': 'Token de API necessário'}), 401
+
+    username = get_user_by_api_token(token)
+    if not username:
+        return jsonify({'error': 'Token inválido'}), 401
+
+    users = load_users()
+    user = users.get(username, {})
+    perms = user.get('permissions', {})
+
+    if not is_approved_user(users, username):
+        return jsonify({'error': 'Conta não aprovada'}), 403
+
+    can_upload, message = check_rate_limit(username)
+    if not can_upload:
+        return jsonify({'error': message}), 429
+
+    if 'file' not in request.files or request.files['file'].filename == '':
+        return jsonify({'error': 'Nenhuma mídia enviada'}), 400
+
+    file = request.files['file']
+    file_content = file.read()
+    filename = file.filename
+
+    is_safe, error_msg = is_safe_file(file_content, filename, allow_video=True)
+    if not is_safe:
+        return jsonify({'error': 'Mídia rejeitada: %s' % error_msg}), 400
+
+    title = sanitize_text(request.form.get('title', '').strip()) or random.choice(RANDOM_UPLOAD_TITLES)
+    description = request.form.get('description', '').strip() or ''
+    embed_color = request.form.get('embed_color', '#0070f3')
+    file_lifetime = request.form.get('file_lifetime', '0')
+
+    if not is_valid_color(embed_color):
+        embed_color = '#0070f3'
+    if not perms.get('can_change_title', True):
+        title = random.choice(RANDOM_UPLOAD_TITLES)
+    if not perms.get('can_choose_embed_color', True):
+        embed_color = '#0070f3'
+
+    allowed_lifetimes = perms.get('file_lifetime', ['0'])
+    if file_lifetime not in allowed_lifetimes:
+        file_lifetime = allowed_lifetimes[0] if allowed_lifetimes else '0'
+
+    ext = os.path.splitext(secure_filename(filename))[1].lower()
+    random_name = secrets.token_hex(16) + ext
+    filepath = os.path.join(UPLOAD_FOLDER, random_name)
+
+    with open(filepath, 'wb') as f:
+        f.write(file_content)
+    try:
+        os.chmod(filepath, 0o644)
+    except OSError:
+        pass
+
+    expire_seconds = 0
+    for opt in FILE_LIFETIME_OPTIONS:
+        if opt['value'] == file_lifetime:
+            expire_seconds = opt['seconds']
+            break
+
+    expire_at = None
+    if expire_seconds > 0:
+        expire_at = (datetime.now() + timedelta(seconds=expire_seconds)).isoformat()
+
+    short_urls = load_json('short_urls.json')
+    short_id = secrets.token_urlsafe(8)
+    while short_id in short_urls:
+        short_id = secrets.token_urlsafe(8)
+
+    short_urls[short_id] = {
+        'filename': random_name,
+        'original_filename': filename,
+        'title': title,
+        'description': description,
+        'username': username,
+        'upload_time': datetime.now().isoformat(),
+        'views': 0,
+        'embed_color': embed_color,
+        'file_size': len(file_content),
+        'expire_at': expire_at,
+        'file_lifetime': file_lifetime,
+    }
+    save_json('short_urls.json', short_urls)
+
+    update_rate_limit(username)
+    users = load_users()
+    users[username]['uploads'] = users[username].get('uploads', 0) + 1
+    save_json('users.json', users)
+
+    return jsonify({
+        'url': '%s/s/%s' % (DOMAIN, short_id),
+        'page': '%s/s/%s' % (DOMAIN, short_id),
+        'raw': '%s/s/%s/raw' % (DOMAIN, short_id),
+        'short_id': short_id,
+    })
 
 
 # ---------------------------------------------------------------------------
@@ -1082,6 +1218,11 @@ def account():
                 save_json('users.json', users)
                 success = "Perfil atualizado com sucesso"
 
+        elif action == 'regenerate_token':
+            users[username]['api_token'] = secrets.token_urlsafe(32)
+            save_json('users.json', users)
+            success = "Token regenerado com sucesso"
+
         users = load_users()
         user = users.get(username, {})
         perms = user.get('permissions', {})
@@ -1108,6 +1249,7 @@ def account():
         username=username,
         perms=perms,
         profile=user.get('profile', {}),
+        api_token=get_or_create_api_token(username),
         invites=user_invites,
         user_files=user_files,
         DOMAIN=DOMAIN,

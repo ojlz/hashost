@@ -80,6 +80,22 @@
     </div>
     {% endif %}
 
+    <div class="card reveal" style="margin-top:16px">
+      <div class="section">
+        <h2 class="section-title">API Token</h2>
+        <p style="color:var(--text2);font-size:12px;margin-bottom:12px">Use este token no ShareX, OBS ou qualquer app de upload.</p>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" value="{{ api_token }}" readonly id="apiTokenInput"
+            style="flex:1;padding:8px 12px;font-family:monospace;font-size:12px;background:var(--surface2);color:var(--text1);border:1px solid var(--border);border-radius:6px">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('apiTokenInput').value).then(()=>this.textContent='Copiado!')">Copiar</button>
+        </div>
+        <form method="POST" style="margin-top:8px">
+          <input type="hidden" name="action" value="regenerate_token">
+          <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Gerar novo token? O token antigo será invalidado.')">Gerar novo token</button>
+        </form>
+      </div>
+    </div>
+
     {% if perms.can_create_invites %}
     <div class="card reveal" style="margin-top:16px">
       <div class="section">
