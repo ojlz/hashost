@@ -7,6 +7,7 @@ venv/
 .venv/
 .virtualenvs/
 .local/
+.cache/
 uploads/
 tools_data/
 users.json
@@ -19,3 +20,11 @@ uploads_data.json
 *.egg-info/
 dist/
 build/
+.bashrc
+.gitconfig
+.ipython/
+.profile
+.pythonstartup.py
+.vimrc
+README.txt
+app.txt
