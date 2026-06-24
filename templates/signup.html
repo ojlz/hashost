@@ -25,18 +25,15 @@
       </div>
       {% endif %}
 
-      <form method="POST">
+      <form method="POST" action="/signup">
         <div class="form-group">
           <label>Usuário</label>
-          <input type="text" name="username" required autofocus placeholder="seu-usuario">
-        </div>
-        <div class="form-group">
-          <label>Email</label>
-          <input type="email" name="email" required placeholder="seu@email.com">
+          <input type="text" name="username" required autofocus placeholder="3-16 caracteres, apenas letras, numeros e _">
         </div>
         <div class="form-group">
           <label>Senha</label>
-          <input type="password" name="password" required placeholder="sua-senha">
+          <input type="password" name="password" required placeholder="6-32 caracteres">
+          <p style="color:var(--text2);font-size:11px;margin-top:4px">Minimo 6, maximo 32 caracteres</p>
         </div>
         {% if invite_code %}
         <div class="form-group">

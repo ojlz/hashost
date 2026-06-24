@@ -80,7 +80,6 @@
         <div>
           <strong>{{ username }}</strong>
           <span class="badge pending-badge">Pendente</span>
-          <span style="color:var(--text2);font-size:12px;margin-left:8px">{{ user.email }}</span>
         </div>
         <div class="user-actions">
           <form method="POST" action="/admin/approve_user/{{ username }}" style="display:inline">
@@ -129,7 +128,7 @@
       </div>
       {% if invites %}
         {% for code, invite in invites.items() %}
-        <div class="invite-item">
+        <div class="invite-item" ondblclick="navigator.clipboard.writeText(window.location.origin+'/iv/{{ code }}').then(()=>this.querySelector('.copy-feedback').textContent='Copiado!')">
           <div style="flex:1;min-width:0">
             <div class="invite-code">{{ code }}</div>
             <div style="font-family:monospace;font-size:11px;color:var(--text2);margin-top:2px;word-break:break-all">/iv/{{ code }}</div>
@@ -140,13 +139,17 @@
               <span class="badge" style="margin-left:0">Disponível</span>
               {% endif %}
               <span style="color:var(--text2);font-size:11px;margin-left:8px">por {{ invite.created_by }}</span>
+              <span class="copy-feedback" style="color:var(--accent);font-size:11px;margin-left:8px"></span>
             </div>
           </div>
           {% if not invite.used %}
-          <form method="POST" action="/admin/delete_invite/{{ code }}" style="display:inline"
-                onsubmit="return confirm('Remover invite?')">
-            <button type="submit" class="btn btn-danger btn-sm">Remover</button>
-          </form>
+          <div style="display:flex;gap:4px">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(window.location.origin+'/iv/{{ code }}').then(()=>this.textContent='Copiado!')" title="Copiar link">Copiar</button>
+            <form method="POST" action="/admin/delete_invite/{{ code }}" style="display:inline"
+                  onsubmit="return confirm('Remover invite?')">
+              <button type="submit" class="btn btn-danger btn-sm">Remover</button>
+            </form>
+          </div>
           {% endif %}
         </div>
         {% endfor %}

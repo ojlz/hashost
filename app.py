@@ -139,7 +139,6 @@ def load_users():
         users = {
             "admin": {
                 "password_hash": hash_password("admin123"),
-                "email": "admin@hashhost.local",
                 "created": datetime.now().isoformat(),
                 "uploads": 0,
                 "status": "approved",
@@ -169,9 +168,6 @@ def load_users():
             if 'uploads' not in user:
                 user['uploads'] = 0
                 migrated = True
-            if 'email' not in user:
-                user['email'] = ''
-                migrated = True
         if migrated:
             save_json('users.json', users)
     return users
@@ -187,6 +183,33 @@ COLOR_REGEX = re.compile(r'^#[0-9a-fA-F]{6}$')
 
 def is_valid_color(color):
     return bool(COLOR_REGEX.match(color))
+
+
+WEAK_PASSWORDS = [
+    '123456', '123456789', '12345678', '1234567', '12345',
+    'password', 'senha', 'admin', 'qwerty', 'abc123',
+    '111111', '000000', 'iloveyou', 'letmein', 'welcome',
+]
+
+def is_weak_password(password):
+    lower = password.lower()
+    if lower in WEAK_PASSWORDS:
+        return True
+    if re.search(r'(.)\1{2,}', lower):
+        return True
+    if re.search(r'(012|123|234|345|456|567|678|789|890|987|876|765|654|543|432|321|210)', lower):
+        return True
+    if password.isdigit():
+        return True
+    if len(password) > 8 and len(set(password)) <= 3:
+        return True
+    return False
+
+
+USERNAME_REGEX = re.compile(r'^[a-zA-Z0-9_]{3,16}$')
+
+def is_valid_username(username):
+    return bool(USERNAME_REGEX.match(username))
 
 
 def check_rate_limit(username):
@@ -406,32 +429,26 @@ def invite_page(code):
 def signup():
     if request.method == 'POST':
         username = sanitize_text(request.form.get('username', '').strip())
-        email = sanitize_text(request.form.get('email', '').strip())
         password = request.form.get('password', '')
         invite_code = sanitize_text(request.form.get('invite_code', '').strip())
 
-        if not username or not email or not password:
-            return render_template('signup.html', error="Usuário, email e senha são obrigatórios",
+        if not username or not password:
+            return render_template('signup.html', error="Usuário e senha são obrigatórios",
                                    invite_code=invite_code)
-        if len(username) < 3:
-            return render_template('signup.html', error="Usuário deve ter pelo menos 3 caracteres",
+        if not is_valid_username(username):
+            return render_template('signup.html', error="Usuário deve ter 3-16 caracteres (letras, números, _)",
                                    invite_code=invite_code)
-        if len(password) < 6:
-            return render_template('signup.html', error="Senha deve ter pelo menos 6 caracteres",
+        if len(password) < 6 or len(password) > 32:
+            return render_template('signup.html', error="Senha deve ter entre 6 e 32 caracteres",
                                    invite_code=invite_code)
-        if '@' not in email:
-            return render_template('signup.html', error="Email inválido",
+        if is_weak_password(password):
+            return render_template('signup.html', error="Senha fraca. Escolha uma senha mais segura",
                                    invite_code=invite_code)
 
         users = load_users()
         if username in users:
             return render_template('signup.html', error="Usuário já existe",
                                    invite_code=invite_code)
-
-        for u in users.values():
-            if u.get('email') == email:
-                return render_template('signup.html', error="Email já está em uso",
-                                       invite_code=invite_code)
 
         if invite_code:
             invites = load_json('invites.json')
@@ -449,7 +466,6 @@ def signup():
 
             users[username] = {
                 'password_hash': hash_password(password),
-                'email': email,
                 'created': datetime.now().isoformat(),
                 'uploads': 0,
                 'status': 'approved',
@@ -466,7 +482,6 @@ def signup():
         else:
             users[username] = {
                 'password_hash': hash_password(password),
-                'email': email,
                 'created': datetime.now().isoformat(),
                 'uploads': 0,
                 'status': 'pending',
@@ -876,21 +891,7 @@ def account():
     if request.method == 'POST':
         action = request.form.get('action', '')
 
-        if action == 'update_email':
-            new_email = sanitize_text(request.form.get('email', '').strip())
-            if not new_email or '@' not in new_email:
-                error = "Email inválido"
-            else:
-                for u in users.values():
-                    if u.get('email') == new_email and u != user:
-                        error = "Email já está em uso"
-                        break
-                if not error:
-                    users[username]['email'] = new_email
-                    save_json('users.json', users)
-                    success = "Email atualizado com sucesso"
-
-        elif action == 'change_password':
+        if action == 'change_password':
             current_password = request.form.get('current_password', '')
             new_password = request.form.get('new_password', '')
             confirm_password = request.form.get('confirm_password', '')
@@ -981,7 +982,6 @@ def account():
     return render_template(
         'account.html',
         username=username,
-        email=user.get('email', ''),
         perms=perms,
         invites=user_invites,
         user_files=user_files,
@@ -1090,12 +1090,15 @@ def create_user():
     if request.method == 'POST':
         new_username = sanitize_text(request.form.get('username', '').strip())
         new_password = request.form.get('password', '').strip()
-        new_email = sanitize_text(request.form.get('email', '').strip())
 
-        if not new_username or not new_password or not new_email:
-            error = "Usuário, email e senha são obrigatórios."
-        elif len(new_password) < 6:
-            error = "Senha deve ter pelo menos 6 caracteres."
+        if not new_username or not new_password:
+            error = "Usuário e senha são obrigatórios."
+        elif not is_valid_username(new_username):
+            error = "Usuário deve ter 3-16 caracteres (letras, números, _)."
+        elif len(new_password) < 6 or len(new_password) > 32:
+            error = "Senha deve ter entre 6 e 32 caracteres."
+        elif is_weak_password(new_password):
+            error = "Senha fraca. Escolha uma senha mais segura."
         else:
             users = load_users()
             if new_username in users:
@@ -1142,7 +1145,6 @@ def create_user():
 
         users[new_username] = {
             'password_hash': hash_password(new_password),
-            'email': new_email,
             'created': datetime.now().isoformat(),
             'uploads': 0,
             'status': 'approved',

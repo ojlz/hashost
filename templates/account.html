@@ -56,19 +56,6 @@
     <div class="success" role="alert" style="margin-bottom:16px">{{ success }}</div>
     {% endif %}
 
-    <div class="card reveal">
-      <div class="section">
-        <h2 class="section-title">Email</h2>
-        <form method="POST">
-          <input type="hidden" name="action" value="update_email">
-          <div class="form-group">
-            <input type="email" name="email" value="{{ email }}" required placeholder="seu@email.com">
-          </div>
-          <button type="submit" class="btn btn-primary btn-sm">Atualizar email</button>
-        </form>
-      </div>
-    </div>
-
     {% if perms.can_change_password %}
     <div class="card reveal" style="margin-top:16px">
       <div class="section">
@@ -112,7 +99,7 @@
         {% endif %}
         {% if invites %}
           {% for code, invite in invites.items() %}
-          <div class="invite-item">
+          <div class="invite-item" ondblclick="navigator.clipboard.writeText('{{ DOMAIN }}/iv/{{ code }}').then(()=>this.querySelector('.copy-feedback').textContent='Copiado!')">
             <div style="flex:1;min-width:0">
               <div class="invite-code">{{ code }}</div>
               <div class="invite-url">{{ DOMAIN }}/iv/{{ code }}</div>
@@ -122,14 +109,18 @@
                 {% else %}
                 <span class="badge badge-available">Disponível</span>
                 {% endif %}
+                <span class="copy-feedback" style="color:var(--accent);font-size:11px;margin-left:8px"></span>
               </div>
             </div>
             {% if not invite.used %}
-            <form method="POST" style="margin-left:8px">
-              <input type="hidden" name="action" value="delete_invite">
-              <input type="hidden" name="code" value="{{ code }}">
-              <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Remover este convite?')">Remover</button>
-            </form>
+            <div style="display:flex;gap:4px;margin-left:8px">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText('{{ DOMAIN }}/iv/{{ code }}').then(()=>this.textContent='Copiado!')" title="Copiar link">Copiar</button>
+              <form method="POST" style="display:inline">
+                <input type="hidden" name="action" value="delete_invite">
+                <input type="hidden" name="code" value="{{ code }}">
+                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Remover este convite?')">Remover</button>
+              </form>
+            </div>
             {% endif %}
           </div>
           {% endfor %}
