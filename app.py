@@ -812,6 +812,7 @@ def _build_embed_page(data, actual_id, filepath):
 
     info_link = "%s/s/%s/info" % (DOMAIN, actual_id)
     raw_link = "%s/s/%s/raw" % (DOMAIN, actual_id)
+    page_url = "%s/s/%s" % (DOMAIN, actual_id)
 
     html = render_template(
         'embed.html',
@@ -824,6 +825,7 @@ def _build_embed_page(data, actual_id, filepath):
         media_html=media_html,
         info_link=info_link,
         raw_link=raw_link,
+        page_url=page_url,
         embed_author=profile.get('embed_author', ''),
         embed_author_url=profile.get('embed_author_url', ''),
         embed_footer=profile.get('embed_footer', ''),
