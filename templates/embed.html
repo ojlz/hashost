@@ -31,22 +31,19 @@
       min-height: 100vh;
       display: flex;
       justify-content: center;
-      align-items: center;
       padding: 24px;
-      position: relative;
-      overflow: hidden;
     }
     body::before {
       content: '';
-      position: fixed;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       background: radial-gradient(ellipse at 30% 20%, {{ embed_color }}15 0%, transparent 50%),
                   radial-gradient(ellipse at 70% 80%, {{ embed_color }}08 0%, transparent 50%);
       z-index: 0;
-      animation: bgPulse 8s ease-in-out infinite alternate;
+      pointer-events: none;
     }
     @keyframes bgPulse {
       0% { opacity: 0.6; transform: scale(1); }
