@@ -8,24 +8,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via PythonAnywhere API
-        env:
-          PA_TOKEN: ${{ secrets.PYTHONANYWHERE_TOKEN }}
-          PA_USER: ${{ secrets.PYTHONANYWHERE_USER }}
-        run: |
-          # Step 1: Create console and run git pull + pip install
-          RESPONSE=$(curl -s -X POST "https://www.pythonanywhere.com/api/v0/user/${PA_USER}/consoles/" \
-            -H "Authorization: Token ${PA_TOKEN}" \
-            -d "command=cd ~/${PA_USER} && git pull origin master && pip3 install --user -r requirements.txt")
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-          echo "Console response: ${RESPONSE}"
-
-          # Step 2: Wait for commands to finish
-          sleep 10
-
-          # Step 3: Reload the web app
-          RELOAD=$(curl -s -X POST "https://www.pythonanywhere.com/api/v0/user/${PA_USER}/webapps/${PA_USER}.pythonanywhere.com/reload/" \
-            -H "Authorization: Token ${PA_TOKEN}")
-
-          echo "Reload response: ${RELOAD}"
-          echo "Deploy concluido!"
+      - name: Deploy to PythonAnywhere
+        uses: umuttopalak/pythonanywhere-deploy-action@v1.1.2
+        with:
+          host: 'www.pythonanywhere.com'
+          username: ${{ secrets.PA_USERNAME }}
+          api_token: ${{ secrets.PA_API_TOKEN }}
+          domain_name: ${{ secrets.PA_DOMAIN }}
