@@ -123,10 +123,16 @@
         <h2>Invites</h2>
       </div>
       <form id="inviteForm" style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px">
-        <div style="display:flex;gap:8px;align-items:center">
-          <label style="color:var(--text2);font-size:12px;white-space:nowrap">Usos:</label>
-          <input type="number" name="max_uses" value="1" min="1" max="50" style="width:70px;padding:6px 10px;font-size:13px;background:var(--surface);color:var(--text1);border:1px solid var(--border);border-radius:6px">
-          <span style="color:var(--text3);font-size:11px">ou -1 para &#8734;</span>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;gap:8px;align-items:center">
+            <label style="color:var(--text2);font-size:12px;white-space:nowrap">Quantidade:</label>
+            <input type="number" name="count" value="1" min="1" max="50" style="width:60px;padding:6px 10px;font-size:13px;background:var(--surface);color:var(--text1);border:1px solid var(--border);border-radius:6px">
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <label style="color:var(--text2);font-size:12px;white-space:nowrap">Usos por invite:</label>
+            <input type="number" name="max_uses" value="1" min="-1" max="50" style="width:70px;padding:6px 10px;font-size:13px;background:var(--surface);color:var(--text1);border:1px solid var(--border);border-radius:6px">
+            <span style="color:var(--text3);font-size:11px">-1 = &#8734;, 0 = uso único</span>
+          </div>
         </div>
         <div>
           <div style="color:var(--text2);font-size:12px;margin-bottom:8px">Permissões do convidado</div>
@@ -152,11 +158,13 @@
           </div>
           <div style="margin-top:8px">
             <label style="color:var(--text2);font-size:12px">Vida útil das mídias</label>
-            <select name="perm_file_lifetime" multiple size="4" style="width:100%;height:auto;margin-top:4px;padding:6px;font-size:12px;background:var(--surface);color:var(--text1);border:1px solid var(--border);border-radius:6px">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
               {% for opt in file_lifetime_options %}
-              <option value="{{ opt.value }}" {% if opt.value == '0' %}selected{% endif %}>{{ opt.label }}</option>
+              <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;color:var(--text2)">
+                <input type="checkbox" name="perm_file_lifetime" value="{{ opt.value }}" class="lifetime-check" {% if opt.value == '0' %}checked{% endif %}> {{ opt.label }}
+              </label>
               {% endfor %}
-            </select>
+            </div>
           </div>
         </div>
         <div>
@@ -242,6 +250,12 @@
   <script>
     document.getElementById('inviteForm').addEventListener('submit', async e => {
       e.preventDefault();
+      const checks = e.target.querySelectorAll('.lifetime-check');
+      const anyChecked = Array.from(checks).some(c => c.checked);
+      if (!anyChecked) {
+        alert('Selecione pelo menos uma opção de vida útil');
+        return;
+      }
       const fd = new FormData(e.target);
       try {
         const r = await fetch('/admin/generate_invite', { method: 'POST', body: fd });
