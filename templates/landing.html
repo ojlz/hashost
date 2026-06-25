@@ -54,33 +54,33 @@
       position: relative;
     }
 
-    /* Hero title — animated gradient text */
+    /* Hero title — scramble-in */
     .hero-title {
       font-size: clamp(52px, 11vw, 100px);
       font-weight: 800;
       letter-spacing: -0.04em;
       line-height: 1.05;
       margin-bottom: 20px;
-      display: inline-flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0 0.15em;
       text-wrap: balance;
       perspective: 800px;
+      min-height: 1.1em;
     }
-    .hero-title .hw {
+    .hero-title .scramble-char {
       display: inline-block;
       opacity: 0;
-      transform: translateY(50px) rotateX(45deg);
-      transform-origin: bottom center;
-      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-                  transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: opacity 0.15s ease-out;
     }
-    .hero-title .hw.v {
+    .hero-title .scramble-char.visible {
       opacity: 1;
-      transform: translateY(0) rotateX(0deg);
     }
-    /* Gradient text on "Hash" */
+    .hero-title .scramble-char.scrambled {
+      color: var(--accent);
+      opacity: 0.6;
+    }
+    .hero-title .scramble-char.locked {
+      color: inherit;
+      opacity: 1;
+    }
     .hero-title .grad {
       background: linear-gradient(135deg, var(--accent), #00c6ff, #7c3aed, var(--accent));
       background-size: 300% 300%;
@@ -95,7 +95,7 @@
       100% { background-position: 0% 50%; }
     }
 
-    /* Hero subtitle — word stagger with blur */
+    /* Hero subtitle */
     .hero-sub {
       font-size: clamp(16px, 2.2vw, 20px);
       max-width: 540px;
@@ -123,7 +123,7 @@
       transform: translateY(0);
     }
 
-    /* Hero buttons — ripple + cursor glow */
+    /* Hero buttons */
     .hero-btns {
       display: flex;
       gap: 14px;
@@ -141,10 +141,7 @@
       position: relative;
       overflow: hidden;
     }
-    .hero-btns .btn:active {
-      transform: scale(0.97);
-    }
-    /* Ripple */
+    .hero-btns .btn:active { transform: scale(0.97); }
     .hero-btns .btn .ripple {
       position: absolute;
       border-radius: 50%;
@@ -156,7 +153,6 @@
     @keyframes rippleAnim {
       to { transform: scale(4); opacity: 0; }
     }
-    /* Cursor glow on primary */
     .hero-btns .btn-primary::after {
       content: '';
       position: absolute;
@@ -212,9 +208,7 @@
         box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,112,243,0.15), 0 0 60px rgba(0,112,243,0.08);
       }
     }
-    .hero-img-float {
-      animation: imgFloat 6s ease-in-out infinite;
-    }
+    .hero-img-float { animation: imgFloat 6s ease-in-out infinite; }
     @keyframes imgFloat {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-8px); }
@@ -265,7 +259,112 @@
       50% { opacity: 0.3; transform: translateX(-50%) translateY(10px); }
     }
 
-    /* --- Stats Section --- */
+    /* --- Upload Demo Section --- */
+    .upload-demo {
+      padding: 40px 24px 80px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .upload-demo-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .upload-demo-header h2 {
+      font-size: clamp(22px, 3.5vw, 28px);
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .upload-demo-header p {
+      color: #999;
+      font-size: 15px;
+    }
+    .demo-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+    .demo-card.v { opacity: 1; transform: translateY(0); }
+
+    .demo-upload-zone {
+      border: 2px dashed var(--border2);
+      border-radius: 12px;
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .demo-upload-zone:hover {
+      border-color: var(--accent);
+      background: rgba(0, 112, 243, 0.04);
+    }
+    .demo-upload-zone .plus {
+      font-size: 36px;
+      color: var(--text2);
+      line-height: 1;
+    }
+    .demo-upload-zone p {
+      color: var(--text2);
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    .demo-preview {
+      display: none;
+      margin-top: 16px;
+      text-align: center;
+    }
+    .demo-preview img {
+      max-width: 100%;
+      max-height: 250px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .demo-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .demo-options .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text2);
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .demo-options input,
+    .demo-options select {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+      pointer-events: none;
+      opacity: 0.5;
+    }
+    .demo-submit {
+      width: 100%;
+      margin-top: 20px;
+      pointer-events: auto !important;
+      opacity: 1 !important;
+      cursor: pointer;
+    }
+    .demo-submit:hover {
+      box-shadow: 0 4px 15px rgba(0, 112, 243, 0.4);
+    }
+    @media (max-width: 640px) {
+      .demo-options { grid-template-columns: 1fr; }
+    }
+
+    /* --- Stats --- */
     .stats {
       padding: 60px 24px 80px;
       max-width: 800px;
@@ -301,17 +400,13 @@
       letter-spacing: 0.08em;
     }
 
-    /* --- Features Section --- */
+    /* --- Features --- */
     .features {
       padding: 80px 24px 120px;
       max-width: 1080px;
       margin: 0 auto;
     }
-    .feat-header {
-      text-align: center;
-      margin-bottom: 64px;
-      position: relative;
-    }
+    .feat-header { text-align: center; margin-bottom: 64px; }
     .feat-eyebrow {
       display: inline-block;
       font-size: 11px;
@@ -343,8 +438,6 @@
       transition: opacity 0.4s ease-out 0.16s, transform 0.4s ease-out 0.16s;
     }
     .feat-sub.v { opacity: 1; transform: translateY(0); }
-
-    /* Feature grid */
     .feat-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -353,34 +446,22 @@
     .feat-reveal {
       opacity: 0;
       transform: translateY(40px);
-      transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-                  transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .feat-reveal.from-left {
-      transform: translateX(-30px) translateY(16px);
-    }
-    .feat-reveal.from-right {
-      transform: translateX(30px) translateY(16px);
-    }
-    .feat-reveal.v {
-      opacity: 1;
-      transform: translateY(0) translateX(0);
-    }
-
-    /* Card — gradient border on hover */
+    .feat-reveal.from-left { transform: translateX(-30px) translateY(16px); }
+    .feat-reveal.from-right { transform: translateX(30px) translateY(16px); }
+    .feat-reveal.v { opacity: 1; transform: translateY(0) translateX(0); }
     .feat-card {
       padding: 32px 24px;
       text-align: center;
       position: relative;
       overflow: hidden;
-      transition: transform 0.25s cubic-bezier(0.23, 1, 0.32, 1),
-                  box-shadow 0.25s ease-out;
+      transition: transform 0.25s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.25s ease-out;
       background: var(--surface);
       border-radius: 12px;
       border: 1px solid transparent;
       background-clip: padding-box;
     }
-    /* Gradient border pseudo-element */
     .feat-card::before {
       content: '';
       position: absolute;
@@ -397,10 +478,7 @@
       transition: background-position 0.5s ease-out, opacity 0.3s ease-out;
       opacity: 0;
     }
-    .feat-card:active {
-      transform: scale(0.98) !important;
-      transition-duration: 0.1s;
-    }
+    .feat-card:active { transform: scale(0.98) !important; transition-duration: 0.1s; }
     .feat-card::after {
       content: '';
       position: absolute;
@@ -411,38 +489,19 @@
       pointer-events: none;
     }
     @media (hover: hover) and (pointer: fine) {
-      .feat-card:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-      }
-      .feat-card:hover::before {
-        opacity: 1;
-        background-position: 0% 0%;
-      }
+      .feat-card:hover { transform: translateY(-6px); box-shadow: 0 20px 50px rgba(0,0,0,0.4); }
+      .feat-card:hover::before { opacity: 1; background-position: 0% 0%; }
       .feat-card:hover::after { opacity: 1; }
     }
-
     .feat-icon {
-      width: 52px;
-      height: 52px;
-      border-radius: 14px;
-      background: rgba(0, 112, 243, 0.08);
-      border: 1px solid rgba(0, 112, 243, 0.15);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 18px;
-      color: var(--accent);
-      font-size: 22px;
-      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
-                  background 0.25s ease-out,
-                  box-shadow 0.25s ease-out;
+      width: 52px; height: 52px; border-radius: 14px;
+      background: rgba(0, 112, 243, 0.08); border: 1px solid rgba(0, 112, 243, 0.15);
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-bottom: 18px; color: var(--accent); font-size: 22px;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.25s ease-out, box-shadow 0.25s ease-out;
     }
     @media (hover: hover) and (pointer: fine) {
-      .feat-card:hover .feat-icon {
-        background: rgba(0, 112, 243, 0.15);
-        box-shadow: 0 0 20px rgba(0,112,243,0.15);
-      }
+      .feat-card:hover .feat-icon { background: rgba(0, 112, 243, 0.15); box-shadow: 0 0 20px rgba(0,112,243,0.15); }
       .feat-card:nth-child(1):hover .feat-icon { transform: scale(1.15) rotate(-8deg); }
       .feat-card:nth-child(2):hover .feat-icon { transform: scale(1.15) translateY(-4px); }
       .feat-card:nth-child(3):hover .feat-icon { transform: scale(1.15) rotate(6deg); }
@@ -450,97 +509,47 @@
       .feat-card:nth-child(5):hover .feat-icon { transform: scale(1.2); }
       .feat-card:nth-child(6):hover .feat-icon { transform: scale(1.15) rotate(8deg); }
     }
-
     .feat-name { font-weight: 700; margin-bottom: 8px; font-size: 15px; }
     .feat-desc { color: #999; font-size: 13px; line-height: 1.7; }
 
-    /* --- CTA Section --- */
-    .cta {
-      padding: 80px 24px 100px;
-      text-align: center;
-    }
+    /* --- CTA --- */
+    .cta { padding: 80px 24px 100px; text-align: center; }
     .cta-box {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 48px 32px;
-      border-radius: 16px;
+      max-width: 600px; margin: 0 auto; padding: 48px 32px; border-radius: 16px;
       background: linear-gradient(135deg, rgba(0,112,243,0.08) 0%, rgba(124,58,237,0.06) 100%);
       border: 1px solid rgba(0,112,243,0.15);
-      opacity: 0;
-      transform: translateY(30px);
+      opacity: 0; transform: translateY(30px);
       transition: opacity 0.6s ease-out, transform 0.6s ease-out;
     }
     .cta-box.v { opacity: 1; transform: translateY(0); }
-    .cta-title {
-      font-size: clamp(22px, 3.5vw, 30px);
-      font-weight: 800;
-      margin-bottom: 12px;
-      text-wrap: balance;
-    }
-    .cta-sub {
-      color: #999;
-      font-size: 15px;
-      margin-bottom: 28px;
-      line-height: 1.6;
-    }
+    .cta-title { font-size: clamp(22px, 3.5vw, 30px); font-weight: 800; margin-bottom: 12px; text-wrap: balance; }
+    .cta-sub { color: #999; font-size: 15px; margin-bottom: 28px; line-height: 1.6; }
 
     /* --- Footer --- */
     .footer {
-      text-align: center;
-      padding: 40px 24px;
-      border-top: 1px solid var(--border);
-      color: var(--text2);
-      font-size: 13px;
-      opacity: 0;
-      transition: opacity 0.4s ease-out;
+      text-align: center; padding: 40px 24px; border-top: 1px solid var(--border);
+      color: var(--text2); font-size: 13px; opacity: 0; transition: opacity 0.4s ease-out;
     }
     .footer.v { opacity: 1; }
 
     /* --- Reduced Motion --- */
     @media (prefers-reduced-motion: reduce) {
-      .hero-title .hw,
-      .hero-sub .sw,
-      .hero-btns,
-      .hero-img-wrap,
-      .feat-eyebrow,
-      .feat-title,
-      .feat-sub,
-      .feat-reveal,
-      .stat-item,
-      .cta-box,
-      .footer {
-        opacity: 1 !important;
-        transform: none !important;
-        filter: none !important;
-        transition: none !important;
+      .hero-title .scramble-char,
+      .hero-sub .sw, .hero-btns, .hero-img-wrap,
+      .feat-eyebrow, .feat-title, .feat-sub, .feat-reveal,
+      .stat-item, .cta-box, .footer, .demo-card {
+        opacity: 1 !important; transform: none !important; filter: none !important; transition: none !important;
       }
-      .hero-title .grad { animation: none !important; }
-      .hero-img-float { animation: none !important; }
-      .hero-img-glow { animation: none !important; }
-      .scroll-mouse::after { animation: none !important; }
-      .ln { transition: none !important; }
-      .hero-btns .btn { transition: none !important; }
-      .feat-card { transition: none !important; }
+      .hero-title .grad, .hero-img-float, .hero-img-glow, .scroll-mouse::after { animation: none !important; }
+      .ln, .hero-btns .btn, .feat-card { transition: none !important; }
       .feat-card:active { transform: none !important; }
     }
-
-    /* Noscript */
     @media (scripting: none) {
-      .hero-title .hw,
-      .hero-sub .sw,
-      .hero-btns,
-      .hero-img-wrap,
-      .feat-eyebrow,
-      .feat-title,
-      .feat-sub,
-      .feat-reveal,
-      .stat-item,
-      .cta-box,
-      .footer {
-        opacity: 1 !important;
-        transform: none !important;
-        filter: none !important;
-        transition: none !important;
+      .hero-title .scramble-char,
+      .hero-sub .sw, .hero-btns, .hero-img-wrap,
+      .feat-eyebrow, .feat-title, .feat-sub, .feat-reveal,
+      .stat-item, .cta-box, .footer, .demo-card {
+        opacity: 1 !important; transform: none !important; filter: none !important; transition: none !important;
       }
     }
 
@@ -564,16 +573,13 @@
   </nav>
 
   <div class="hero">
-    <h1 class="hero-title" id="heroTitle">
-      <span class="hw"><span class="grad">H</span>ash</span>
-      <span class="hw">Host</span>
-    </h1>
+    <h1 class="hero-title" id="heroTitle"></h1>
     <p class="hero-sub" id="heroSub">
       <span class="sw">Armazenamento</span>
       <span class="sw">e</span>
       <span class="sw">compartilhamento</span>
       <span class="sw">de</span>
-      <span class="sw">mídias</span>
+      <span class="sw">midias</span>
       <span class="sw">com</span>
       <span class="sw">links</span>
       <span class="sw">diretos</span>
@@ -598,6 +604,45 @@
       <span>Scroll</span>
     </div>
   </div>
+
+  <!-- Upload Demo -->
+  <section class="upload-demo">
+    <div class="upload-demo-header">
+      <h2>Experimente</h2>
+      <p>Veja como e simples enviar sua midia</p>
+    </div>
+    <div class="demo-card" id="demoCard">
+      <div class="demo-upload-zone" id="demoDropZone">
+        <div class="plus">+</div>
+        <p>Arraste a midia aqui ou clique para selecionar</p>
+        <input type="file" id="demoFileInput" style="display:none" accept="image/*,video/mp4,video/webm,audio/mpeg">
+      </div>
+      <div class="demo-preview" id="demoPreview">
+        <img id="demoPreviewImg" src="" alt="Preview">
+      </div>
+      <div class="demo-options">
+        <div class="form-group">
+          <label>Titulo</label>
+          <input type="text" placeholder="Titulo opcional" disabled>
+        </div>
+        <div class="form-group">
+          <label>Descricao</label>
+          <input type="text" placeholder="Descricao opcional" disabled>
+        </div>
+        <div class="form-group">
+          <label>Vida util</label>
+          <select disabled>
+            <option>Permanente</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Cor do embed</label>
+          <input type="color" value="#0070f3" disabled>
+        </div>
+      </div>
+      <button type="button" class="btn btn-primary demo-submit" id="demoSubmit">Enviar</button>
+    </div>
+  </section>
 
   <!-- Stats -->
   <section class="stats">
@@ -627,54 +672,42 @@
     <div class="feat-grid" id="featGrid">
       <div class="feat-reveal" data-delay="0">
         <div class="card feat-card">
-          <div class="feat-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          </div>
+          <div class="feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
           <div class="feat-name">Upload rapido</div>
           <div class="feat-desc">Envie imagens, GIFs, videos e audios com drag and drop</div>
         </div>
       </div>
       <div class="feat-reveal from-left" data-delay="80">
         <div class="card feat-card">
-          <div class="feat-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          </div>
+          <div class="feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
           <div class="feat-name">Embeds para Discord</div>
           <div class="feat-desc">Pre-visualizacao automatica com cores e perfil personalizados</div>
         </div>
       </div>
       <div class="feat-reveal from-right" data-delay="160">
         <div class="card feat-card">
-          <div class="feat-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-          </div>
+          <div class="feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
           <div class="feat-name">API e ShareX</div>
           <div class="feat-desc">Upload automatico via ShareX, OBS ou qualquer app por API</div>
         </div>
       </div>
       <div class="feat-reveal" data-delay="0">
         <div class="card feat-card">
-          <div class="feat-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </div>
+          <div class="feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
           <div class="feat-name">Tempo de vida</div>
           <div class="feat-desc">Defina expiracao: 1 hora, 3 dias, 1 semana, 1 mes ou permanente</div>
         </div>
       </div>
       <div class="feat-reveal from-left" data-delay="80">
         <div class="card feat-card">
-          <div class="feat-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          </div>
+          <div class="feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
           <div class="feat-name">Convites</div>
           <div class="feat-desc">Sistema de convites com permissoes customizaveis</div>
         </div>
       </div>
       <div class="feat-reveal from-right" data-delay="160">
         <div class="card feat-card">
-          <div class="feat-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          </div>
+          <div class="feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
           <div class="feat-name">HashBin</div>
           <div class="feat-desc">Compartilhe codigo e texto com syntax highlighting</div>
         </div>
@@ -686,7 +719,7 @@
   <section class="cta">
     <div class="cta-box" id="ctaBox">
       <div class="cta-title">Comece agora</div>
-      <p class="cta-sub">Crie sua conta gratuita e comece a compartilhar midias em segundos</p>
+      <p class="cta-sub">Crie sua conta gratuita e comeca a compartilhar midias em segundos</p>
       <a href="/signup" class="btn btn-primary">Criar conta gratis</a>
     </div>
   </section>
@@ -698,88 +731,120 @@
     (function() {
       'use strict';
 
-      /* --- Nav scroll effect --- */
+      /* ============================================================
+         SCRAMBLE-IN: hero title reveal
+         ============================================================ */
+      var scrambleChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%&*!';
+      var targetText = 'HashHost';
+      var heroTitle = document.getElementById('heroTitle');
+      var scrambleState = [];
+      var scrambleReady = false;
+
+      function initScramble() {
+        heroTitle.innerHTML = '';
+        scrambleState = [];
+        for (var i = 0; i < targetText.length; i++) {
+          var span = document.createElement('span');
+          span.className = 'scramble-char visible scrambled';
+          span.textContent = scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+          heroTitle.appendChild(span);
+          scrambleState.push({ el: span, locked: false, char: targetText[i] });
+        }
+        scrambleReady = true;
+        runScramble();
+      }
+
+      function runScramble() {
+        var idx = 0;
+        var interval = setInterval(function() {
+          if (idx >= scrambleState.length) {
+            clearInterval(interval);
+            return;
+          }
+          /* scramble remaining unlocked chars */
+          for (var j = idx; j < scrambleState.length; j++) {
+            if (!scrambleState[j].locked) {
+              scrambleState[j].el.textContent = scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+            }
+          }
+          /* lock current char */
+          scrambleState[idx].el.textContent = scrambleState[idx].char;
+          scrambleState[idx].el.className = 'scramble-char visible locked grad';
+          scrambleState[idx].locked = true;
+          idx++;
+        }, 60);
+      }
+
+      /* start scramble after tiny delay */
+      setTimeout(initScramble, 100);
+
+      /* ============================================================
+         NAV scroll
+         ============================================================ */
       var nav = document.getElementById('mainNav');
       function onScroll() {
-        if (window.scrollY > 60) {
-          nav.classList.add('scrolled');
-        } else {
-          nav.classList.remove('scrolled');
-        }
+        nav.classList.toggle('scrolled', window.scrollY > 60);
       }
       window.addEventListener('scroll', onScroll, { passive: true });
 
-      /* --- Hero title: word-by-word reveal --- */
-      var titleWords = document.querySelectorAll('#heroTitle .hw');
-      titleWords.forEach(function(w, i) {
-        setTimeout(function() { w.classList.add('v'); }, 200 + i * 150);
-      });
-
-      /* --- Hero subtitle: word stagger with blur --- */
+      /* ============================================================
+         HERO subtitle stagger
+         ============================================================ */
       var subWords = document.querySelectorAll('#heroSub .sw');
       subWords.forEach(function(w, i) {
-        setTimeout(function() { w.classList.add('v'); }, 600 + i * 60);
+        setTimeout(function() { w.classList.add('v'); }, 800 + i * 60);
       });
 
-      /* --- Hero buttons --- */
+      /* hero buttons */
       var heroBtns = document.getElementById('heroBtns');
-      setTimeout(function() { heroBtns.classList.add('v'); }, 600 + subWords.length * 60 + 200);
+      setTimeout(function() { heroBtns.classList.add('v'); }, 800 + subWords.length * 60 + 200);
 
-      /* --- Hero image --- */
-      var heroImg = document.getElementById('heroImg');
-      setTimeout(function() { heroImg.classList.add('v'); }, 400);
+      /* hero image */
+      setTimeout(function() { document.getElementById('heroImg').classList.add('v'); }, 600);
 
-      /* --- Scroll indicator fade --- */
+      /* ============================================================
+         SCROLL indicator fade
+         ============================================================ */
       var scrollIndicator = document.getElementById('scrollIndicator');
-      function updateScrollIndicator() {
-        if (window.scrollY > 120) {
-          scrollIndicator.classList.add('hidden');
-        } else {
-          scrollIndicator.classList.remove('hidden');
-        }
-      }
-      window.addEventListener('scroll', updateScrollIndicator, { passive: true });
+      window.addEventListener('scroll', function() {
+        scrollIndicator.classList.toggle('hidden', window.scrollY > 120);
+      }, { passive: true });
 
-      /* --- Parallax on hero image --- */
+      /* ============================================================
+         PARALLAX
+         ============================================================ */
       var imgWrap = document.querySelector('.hero-img-wrap');
       var ticking = false;
       function parallax() {
         var y = window.scrollY;
         if (y < window.innerHeight) {
-          var factor = y * 0.15;
-          var scale = 1 - y * 0.0002;
-          imgWrap.style.transform = 'translateY(' + factor + 'px) scale(' + Math.max(scale, 0.9) + ')';
+          imgWrap.style.transform = 'translateY(' + (y * 0.15) + 'px) scale(' + Math.max(1 - y * 0.0002, 0.9) + ')';
           imgWrap.style.opacity = Math.max(1 - y / (window.innerHeight * 0.8), 0);
         }
         ticking = false;
       }
       window.addEventListener('scroll', function() {
-        if (!ticking) {
-          requestAnimationFrame(parallax);
-          ticking = true;
-        }
+        if (!ticking) { requestAnimationFrame(parallax); ticking = true; }
       }, { passive: true });
 
-      /* --- Scroll-linked background shift --- */
+      /* ============================================================
+         BG shift
+         ============================================================ */
       var bgTicking = false;
       function shiftBg() {
         var y = window.scrollY;
         var h = document.documentElement.scrollHeight - window.innerHeight;
-        var progress = Math.min(y / h, 1);
-        var r = Math.round(progress * 3);
-        var g = Math.round(progress * 5);
-        var b = Math.round(progress * 15);
-        document.body.style.backgroundColor = 'rgb(' + r + ',' + g + ',' + b + ')';
+        var p = Math.min(y / h, 1);
+        document.body.style.backgroundColor = 'rgb(' + Math.round(p * 3) + ',' + Math.round(p * 5) + ',' + Math.round(p * 15) + ')';
         bgTicking = false;
       }
       window.addEventListener('scroll', function() {
-        if (!bgTicking) {
-          requestAnimationFrame(shiftBg);
-          bgTicking = true;
-        }
+        if (!bgTicking) { requestAnimationFrame(shiftBg); bgTicking = true; }
       }, { passive: true });
 
-      /* --- Button ripple effect --- */
+      /* ============================================================
+         BUTTON ripple + glow
+         ============================================================ */
       document.querySelectorAll('.hero-btns .btn').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
           var rect = btn.getBoundingClientRect();
@@ -793,8 +858,6 @@
           setTimeout(function() { ripple.remove(); }, 600);
         });
       });
-
-      /* --- Button cursor glow --- */
       document.querySelectorAll('.hero-btns .btn-primary').forEach(function(btn) {
         btn.addEventListener('mousemove', function(e) {
           var r = btn.getBoundingClientRect();
@@ -803,41 +866,76 @@
         });
       });
 
-      /* --- Stats counter animation --- */
+      /* ============================================================
+         UPLOAD DEMO — redirects to /signup
+         ============================================================ */
+      var demoDropZone = document.getElementById('demoDropZone');
+      var demoFileInput = document.getElementById('demoFileInput');
+      var demoPreview = document.getElementById('demoPreview');
+      var demoPreviewImg = document.getElementById('demoPreviewImg');
+      var demoSubmit = document.getElementById('demoSubmit');
+
+      demoDropZone.addEventListener('click', function() { demoFileInput.click(); });
+      demoDropZone.addEventListener('dragover', function(e) { e.preventDefault(); demoDropZone.style.borderColor = 'var(--accent)'; });
+      demoDropZone.addEventListener('dragleave', function() { demoDropZone.style.borderColor = ''; });
+      demoDropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        demoDropZone.style.borderColor = '';
+        if (e.dataTransfer.files.length) showDemoPreview(e.dataTransfer.files[0]);
+      });
+      demoFileInput.addEventListener('change', function() {
+        if (demoFileInput.files.length) showDemoPreview(demoFileInput.files[0]);
+      });
+
+      function showDemoPreview(file) {
+        if (!file.type.startsWith('image/') && !file.type.startsWith('video/') && !file.type.startsWith('audio/')) return;
+        if (file.type.startsWith('image/')) {
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            demoPreviewImg.src = e.target.result;
+            demoPreview.style.display = 'block';
+            demoDropZone.style.display = 'none';
+          };
+          reader.readAsDataURL(file);
+        } else {
+          demoPreview.style.display = 'block';
+          demoDropZone.style.display = 'none';
+          demoPreviewImg.src = '';
+          demoPreviewImg.alt = file.name;
+        }
+      }
+
+      demoSubmit.addEventListener('click', function() {
+        window.location.href = '/signup';
+      });
+
+      /* ============================================================
+         STATS counter
+         ============================================================ */
       function animateCounter(el, target) {
-        var start = 0;
-        var duration = 1500;
-        var startTime = null;
-        function step(timestamp) {
-          if (!startTime) startTime = timestamp;
-          var progress = Math.min((timestamp - startTime) / duration, 1);
-          var eased = 1 - Math.pow(1 - progress, 3);
-          var current = Math.floor(eased * target);
-          if (target >= 1000) {
-            el.textContent = current.toLocaleString('pt-BR');
-          } else {
-            el.textContent = current;
-          }
-          if (progress < 1) requestAnimationFrame(step);
+        var duration = 1500, startTime = null;
+        function step(ts) {
+          if (!startTime) startTime = ts;
+          var p = Math.min((ts - startTime) / duration, 1);
+          var eased = 1 - Math.pow(1 - p, 3);
+          el.textContent = target >= 1000 ? Math.floor(eased * target).toLocaleString('pt-BR') : Math.floor(eased * target);
+          if (p < 1) requestAnimationFrame(step);
         }
         requestAnimationFrame(step);
       }
 
-      /* --- Features + Stats + CTA + Footer: IntersectionObserver --- */
-      var featEls = [
+      /* ============================================================
+         INTERSECTION OBSERVER — reveal all sections
+         ============================================================ */
+      var revealEls = [
         document.getElementById('featEyebrow'),
         document.getElementById('featTitle'),
-        document.getElementById('featSub')
-      ];
-      var featReveals = document.querySelectorAll('.feat-reveal');
-      var statItems = document.querySelectorAll('.stat-item');
-      var ctaBox = document.getElementById('ctaBox');
-      var footer = document.getElementById('footer');
-
-      var allReveal = featEls
-        .concat(Array.prototype.slice.call(featReveals))
-        .concat(Array.prototype.slice.call(statItems))
-        .concat([ctaBox, footer]);
+        document.getElementById('featSub'),
+        document.getElementById('demoCard'),
+        document.getElementById('ctaBox'),
+        document.getElementById('footer')
+      ].concat(Array.prototype.slice.call(document.querySelectorAll('.feat-reveal')))
+       .concat(Array.prototype.slice.call(document.querySelectorAll('.stat-item')));
 
       var obs = new IntersectionObserver(function(entries) {
         entries.forEach(function(e) {
@@ -845,22 +943,19 @@
             var delay = parseInt(e.target.dataset.delay) || 0;
             setTimeout(function() {
               e.target.classList.add('v');
-              /* trigger counter if stat */
               var num = e.target.querySelector('.stat-number');
-              if (num && num.dataset.target) {
-                animateCounter(num, parseInt(num.dataset.target));
-              }
+              if (num && num.dataset.target) animateCounter(num, parseInt(num.dataset.target));
             }, delay);
             obs.unobserve(e.target);
           }
         });
       }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
-      allReveal.forEach(function(el) {
-        if (el) obs.observe(el);
-      });
+      revealEls.forEach(function(el) { if (el) obs.observe(el); });
 
-      /* --- Feature card glare tracking --- */
+      /* ============================================================
+         CARD glare
+         ============================================================ */
       document.querySelectorAll('.feat-card').forEach(function(c) {
         c.addEventListener('mousemove', function(e) {
           var r = c.getBoundingClientRect();
