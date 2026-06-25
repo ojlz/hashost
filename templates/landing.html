@@ -8,6 +8,7 @@
   <style>
     html { scroll-behavior: smooth; }
 
+    /* --- Nav --- */
     .landing-nav {
       position: fixed;
       top: 0;
@@ -16,12 +17,11 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 16px 32px;
+      padding: 20px 40px;
       z-index: 100;
-      background: rgba(10, 10, 10, 0.8);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      transition: background 0.3s ease;
+      background: rgba(10, 10, 10, 0.6);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
     }
     .landing-brand {
       font-size: 20px;
@@ -30,49 +30,71 @@
       color: var(--text1);
       text-decoration: none;
     }
-    .landing-brand .hl {
-      color: var(--accent);
-    }
-    .landing-nav-buttons {
-      display: flex;
-      gap: 10px;
-    }
+    .landing-brand .hl { color: var(--accent); }
+    .landing-nav-buttons { display: flex; gap: 10px; }
 
+    /* --- Hero --- */
     .hero {
-      min-height: 80vh;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 40px 24px;
-      position: relative;
+      padding: 60px 24px 80px;
+      overflow: hidden;
     }
     .hero-title {
-      font-size: 64px;
+      font-size: clamp(40px, 8vw, 80px);
       font-weight: 700;
       letter-spacing: -0.04em;
-      margin-bottom: 16px;
-      line-height: 1.1;
+      line-height: 1.05;
+      margin-bottom: 20px;
     }
-    .hero-title .hl {
-      color: var(--accent);
+    .hero-title .line {
+      display: block;
+      overflow: hidden;
     }
+    .hero-title .line-inner {
+      display: block;
+      transform: translateY(110%);
+      animation: lineReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .hero-title .line:nth-child(2) .line-inner { animation-delay: 0.12s; }
+    .hero-title .hl { color: var(--accent); }
+
+    @keyframes lineReveal {
+      from { transform: translateY(110%); }
+      to { transform: translateY(0); }
+    }
+
     .hero-tagline {
       color: var(--text2);
-      font-size: 18px;
+      font-size: clamp(15px, 2vw, 19px);
       margin-bottom: 40px;
-      max-width: 500px;
+      max-width: 520px;
       line-height: 1.6;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.7s ease 0.4s forwards;
     }
     .hero-buttons {
       display: flex;
       gap: 12px;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.7s ease 0.55s forwards;
     }
 
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* --- Features --- */
     .features {
-      padding: 100px 24px;
-      max-width: 1000px;
+      padding: 80px 24px 100px;
+      max-width: 1040px;
       margin: 0 auto;
     }
     .features-header {
@@ -95,30 +117,26 @@
     .feature-card {
       padding: 32px 24px;
       text-align: center;
-      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-      cursor: default;
       position: relative;
       overflow: hidden;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.3s ease;
     }
-    .feature-card::before {
+    .feature-card::after {
       content: '';
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: var(--accent);
-      transform: scaleX(0);
-      transition: transform 0.3s ease;
+      inset: 0;
+      background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(0,112,243,0.08) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
     }
     .feature-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-      border-color: rgba(0, 112, 243, 0.3);
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+      border-color: rgba(0,112,243,0.3);
     }
-    .feature-card:hover::before {
-      transform: scaleX(1);
-    }
+    .feature-card:hover::after { opacity: 1; }
+
     .feature-icon {
       width: 52px;
       height: 52px;
@@ -131,10 +149,10 @@
       margin-bottom: 18px;
       color: var(--accent);
       font-size: 22px;
-      transition: transform 0.3s ease, background 0.3s ease;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease;
     }
     .feature-card:hover .feature-icon {
-      transform: scale(1.1);
+      transform: scale(1.15) rotate(-4deg);
       background: rgba(0, 112, 243, 0.15);
     }
     .feature-title {
@@ -148,6 +166,29 @@
       line-height: 1.6;
     }
 
+    /* --- Scroll reveal --- */
+    .sr {
+      opacity: 0;
+      transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .sr.sr-up { transform: translateY(40px); }
+    .sr.sr-left { transform: translateX(-40px); }
+    .sr.sr-right { transform: translateX(40px); }
+    .sr.sr-scale { transform: scale(0.9); }
+    .sr.visible {
+      opacity: 1;
+      transform: translateY(0) translateX(0) scale(1);
+    }
+
+    /* stagger delays */
+    .sr-delay-1 { transition-delay: 0.06s; }
+    .sr-delay-2 { transition-delay: 0.12s; }
+    .sr-delay-3 { transition-delay: 0.18s; }
+    .sr-delay-4 { transition-delay: 0.24s; }
+    .sr-delay-5 { transition-delay: 0.30s; }
+    .sr-delay-6 { transition-delay: 0.36s; }
+
+    /* --- Footer --- */
     .footer {
       text-align: center;
       padding: 40px 24px;
@@ -157,10 +198,9 @@
     }
 
     @media (max-width: 640px) {
-      .landing-nav { padding: 12px 16px; }
+      .landing-nav { padding: 14px 16px; }
       .features-grid { grid-template-columns: 1fr; }
       .hero-buttons { flex-direction: column; }
-      .hero-title { font-size: 36px; }
     }
   </style>
 </head>
@@ -174,46 +214,48 @@
   </nav>
 
   <div class="hero">
-    <h1 class="hero-title reveal"><span class="hl">H</span>ashHost</h1>
-    <p class="hero-tagline reveal">Armazenamento e compartilhamento de mídias com links diretos para Discord e outras plataformas.</p>
-    <div class="hero-buttons stagger-children">
+    <h1 class="hero-title">
+      <span class="line"><span class="line-inner"><span class="hl">H</span>ashHost</span></span>
+    </h1>
+    <p class="hero-tagline">Armazenamento e compartilhamento de mídias com links diretos para Discord e outras plataformas.</p>
+    <div class="hero-buttons">
       <a href="/signup" class="btn btn-primary">Criar conta</a>
       <a href="/login" class="btn btn-ghost">Entrar</a>
     </div>
   </div>
 
   <section class="features">
-    <div class="features-header reveal">
+    <div class="features-header sr sr-up">
       <h2 class="features-title">Funcionalidades</h2>
       <p class="features-subtitle">Tudo que você precisa para compartilhar mídias</p>
     </div>
-    <div class="features-grid stagger-children">
-      <div class="card feature-card">
+    <div class="features-grid">
+      <div class="card feature-card sr sr-scale sr-delay-1" data-glare>
         <div class="feature-icon">&#8682;</div>
         <div class="feature-title">Upload rápido</div>
         <div class="feature-desc">Envie imagens, GIFs, vídeos e áudios com drag and drop</div>
       </div>
-      <div class="card feature-card">
+      <div class="card feature-card sr sr-scale sr-delay-2" data-glare>
         <div class="feature-icon">&#9741;</div>
         <div class="feature-title">Embeds para Discord</div>
         <div class="feature-desc">Pré-visualização automática com cores e perfil personalizados</div>
       </div>
-      <div class="card feature-card">
+      <div class="card feature-card sr sr-scale sr-delay-3" data-glare>
         <div class="feature-icon">&#9881;</div>
         <div class="feature-title">API e ShareX</div>
         <div class="feature-desc">Upload automático via ShareX, OBS ou qualquer app por API</div>
       </div>
-      <div class="card feature-card">
+      <div class="card feature-card sr sr-scale sr-delay-4" data-glare>
         <div class="feature-icon">&#9201;</div>
         <div class="feature-title">Tempo de vida</div>
         <div class="feature-desc">Defina expiração: 1 hora, 3 dias, 1 semana, 1 mês ou permanente</div>
       </div>
-      <div class="card feature-card">
+      <div class="card feature-card sr sr-scale sr-delay-5" data-glare>
         <div class="feature-icon">&#128274;</div>
         <div class="feature-title">Convites</div>
         <div class="feature-desc">Sistema de convites com permissões customizáveis</div>
       </div>
-      <div class="card feature-card">
+      <div class="card feature-card sr sr-scale sr-delay-6" data-glare>
         <div class="feature-icon">&#9879;</div>
         <div class="feature-title">HashBin</div>
         <div class="feature-desc">Compartilhe código e texto com syntax highlighting</div>
@@ -226,6 +268,32 @@
   </footer>
 
   <script src="/static/wavy-canvas.js"></script>
-  <script src="/static/animations.js"></script>
+  <script>
+    (function() {
+      /* Scroll reveal */
+      var srs = document.querySelectorAll('.sr');
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
+      srs.forEach(function(el) { observer.observe(el); });
+
+      /* Glare follow cursor */
+      var glares = document.querySelectorAll('[data-glare]');
+      glares.forEach(function(card) {
+        card.addEventListener('mousemove', function(e) {
+          var r = card.getBoundingClientRect();
+          var x = ((e.clientX - r.left) / r.width * 100);
+          var y = ((e.clientY - r.top) / r.height * 100);
+          card.style.setProperty('--mx', x + '%');
+          card.style.setProperty('--my', y + '%');
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
