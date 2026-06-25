@@ -18,9 +18,17 @@
       align-items: center;
       padding: 20px 40px;
       z-index: 100;
-      background: rgba(10, 10, 10, 0.6);
-      backdrop-filter: blur(16px);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: rgba(10, 10, 10, 0.4);
+      backdrop-filter: blur(0px);
+      border-bottom: 1px solid transparent;
+      transition: background 0.4s ease, padding 0.4s ease, backdrop-filter 0.4s ease, border-color 0.4s ease;
+    }
+    .ln.scrolled {
+      background: rgba(10, 10, 10, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 14px 40px;
+      border-bottom-color: rgba(255,255,255,0.06);
     }
     .ln-brand {
       font-size: 20px;
@@ -28,7 +36,9 @@
       letter-spacing: -0.03em;
       color: var(--text1);
       text-decoration: none;
+      transition: opacity 0.3s ease;
     }
+    .ln-brand:hover { opacity: 0.8; text-decoration: none; }
     .ln-brand .hl { color: var(--accent); }
     .ln-btns { display: flex; gap: 10px; }
 
@@ -43,26 +53,86 @@
       padding: 100px 24px 60px;
       position: relative;
     }
+
+    /* Hero title — word reveal */
     .hero-title {
       font-size: clamp(44px, 9vw, 88px);
       font-weight: 700;
       letter-spacing: -0.04em;
       line-height: 1.05;
       margin-bottom: 20px;
+      display: inline-flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0 0.25em;
+    }
+    .hero-title .hw {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(40px) rotateX(40deg);
+      transform-origin: bottom center;
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .hero-title .hw.v {
+      opacity: 1;
+      transform: translateY(0) rotateX(0deg);
     }
     .hero-title .hl { color: var(--accent); }
+
+    /* Hero subtitle — word stagger with blur */
     .hero-sub {
-      color: var(--text2);
       font-size: clamp(15px, 2vw, 18px);
-      max-width: 480px;
-      line-height: 1.6;
+      max-width: 520px;
+      line-height: 1.7;
       margin-bottom: 36px;
+      display: inline-flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0 0.3em;
     }
+    .hero-sub .sw {
+      display: inline-block;
+      opacity: 0;
+      filter: blur(8px);
+      transform: translateY(16px);
+      transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                  filter 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .hero-sub .sw.v {
+      opacity: 1;
+      filter: blur(0);
+      transform: translateY(0);
+    }
+
+    /* Hero buttons — magnetic + glow */
     .hero-btns {
       display: flex;
       gap: 12px;
       margin-bottom: 60px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease 0.6s, transform 0.6s ease 0.6s;
     }
+    .hero-btns.v {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .hero-btns .btn-primary {
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-btns .btn-primary::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at var(--bx, 50%) var(--by, 50%), rgba(255,255,255,0.2) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    .hero-btns .btn-primary:hover::after { opacity: 1; }
 
     /* --- Hero Image --- */
     .hero-img-wrap {
@@ -70,13 +140,26 @@
       width: 100%;
       max-width: 820px;
       margin: 0 auto;
+      opacity: 0;
+      transform: translateY(60px) scale(0.94);
+      transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s,
+                  transform 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s;
+    }
+    .hero-img-wrap.v {
+      opacity: 1;
+      transform: translateY(0) scale(1);
     }
     .hero-img-glow {
       position: absolute;
-      inset: -40px;
-      background: radial-gradient(ellipse at 50% 80%, rgba(0,112,243,0.15) 0%, transparent 70%);
+      inset: -50px;
+      background: radial-gradient(ellipse at 50% 80%, rgba(0,112,243,0.12) 0%, transparent 70%);
       pointer-events: none;
       z-index: 0;
+      animation: glowPulse 4s ease-in-out infinite;
+    }
+    @keyframes glowPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.05); }
     }
     .hero-img {
       position: relative;
@@ -85,49 +168,107 @@
       border-radius: 16px;
       border: 1px solid rgba(255,255,255,0.08);
       box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+      transition: border-color 0.4s ease, box-shadow 0.4s ease;
+    }
+    .hero-img-wrap:hover .hero-img {
+      border-color: rgba(0,112,243,0.25);
+      box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,112,243,0.15), 0 0 60px rgba(0,112,243,0.08);
     }
 
-    /* --- Reveal --- */
-    .r {
+    /* Parallax float on hero image */
+    .hero-img-float {
+      animation: imgFloat 6s ease-in-out infinite;
+    }
+    @keyframes imgFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    /* --- Scroll progress indicator --- */
+    .scroll-indicator {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
       opacity: 0;
-      transform: translateY(50px);
-      transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: opacity 0.5s ease 1.2s;
     }
-    .r.v {
-      opacity: 1;
-      transform: translateY(0);
+    .hero-btns.v ~ .scroll-indicator { opacity: 1; }
+    .scroll-indicator span {
+      font-size: 11px;
+      color: var(--text2);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
     }
-    .r-scale {
-      opacity: 0;
-      transform: translateY(40px) scale(0.92);
-      transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+    .scroll-mouse {
+      width: 24px;
+      height: 38px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      position: relative;
     }
-    .r-scale.v {
-      opacity: 1;
-      transform: translateY(0) scale(1);
+    .scroll-mouse::after {
+      content: '';
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 3px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 3px;
+      animation: scrollDot 1.8s ease-in-out infinite;
+    }
+    @keyframes scrollDot {
+      0%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+      50% { opacity: 0.3; transform: translateX(-50%) translateY(10px); }
     }
 
-    /* stagger */
-    .d1 { transition-delay: 0.08s; }
-    .d2 { transition-delay: 0.16s; }
-    .d3 { transition-delay: 0.24s; }
-    .d4 { transition-delay: 0.32s; }
-    .d5 { transition-delay: 0.40s; }
-    .d6 { transition-delay: 0.48s; }
-
-    /* --- Features --- */
+    /* --- Features Section --- */
     .features {
       padding: 100px 24px 120px;
-      max-width: 1040px;
+      max-width: 1080px;
       margin: 0 auto;
     }
     .feat-header {
       text-align: center;
-      margin-bottom: 56px;
+      margin-bottom: 64px;
     }
-    .feat-title { font-size: 28px; margin-bottom: 12px; }
-    .feat-sub { color: var(--text2); font-size: 15px; }
+    .feat-eyebrow {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .feat-eyebrow.v { opacity: 1; transform: translateY(0); }
+    .feat-title {
+      font-size: clamp(24px, 4vw, 32px);
+      margin-bottom: 12px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease 0.1s, transform 0.6s ease 0.1s;
+    }
+    .feat-title.v { opacity: 1; transform: translateY(0); }
+    .feat-sub {
+      color: var(--text2);
+      font-size: 15px;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.6s ease 0.2s, transform 0.6s ease 0.2s;
+    }
+    .feat-sub.v { opacity: 1; transform: translateY(0); }
 
+    /* Feature grid — 2+1 layout instead of identical 3-col */
     .feat-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -138,62 +279,133 @@
       text-align: center;
       position: relative;
       overflow: hidden;
-      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.3s ease;
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                  box-shadow 0.5s ease,
+                  border-color 0.4s ease;
+      /* varied entrance directions */
+      opacity: 0;
+      transform: translateY(50px);
+    }
+    .feat-card.from-left {
+      transform: translateX(-40px) translateY(20px);
+    }
+    .feat-card.from-right {
+      transform: translateX(40px) translateY(20px);
+    }
+    .feat-card.v {
+      opacity: 1;
+      transform: translateY(0) translateX(0);
     }
     .feat-card::after {
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(0,112,243,0.1) 0%, transparent 60%);
+      background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(0,112,243,0.08) 0%, transparent 60%);
       opacity: 0;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.4s ease;
       pointer-events: none;
     }
     .feat-card:hover {
       transform: translateY(-6px);
-      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.4);
       border-color: rgba(0,112,243,0.3);
     }
     .feat-card:hover::after { opacity: 1; }
 
     .feat-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
       background: rgba(0, 112, 243, 0.08);
       border: 1px solid rgba(0, 112, 243, 0.15);
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
       color: var(--accent);
-      font-size: 20px;
-      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease;
+      font-size: 22px;
+      transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  background 0.3s ease,
+                  box-shadow 0.3s ease;
     }
     .feat-card:hover .feat-icon {
-      transform: scale(1.15) rotate(-5deg);
       background: rgba(0, 112, 243, 0.15);
+      box-shadow: 0 0 20px rgba(0,112,243,0.15);
     }
-    .feat-name { font-weight: 600; margin-bottom: 6px; font-size: 15px; }
-    .feat-desc { color: var(--text2); font-size: 13px; line-height: 1.6; }
+    /* icon-specific hover animations */
+    .feat-card:nth-child(1):hover .feat-icon { transform: scale(1.15) rotate(-8deg); }
+    .feat-card:nth-child(2):hover .feat-icon { transform: scale(1.15) translateY(-4px); }
+    .feat-card:nth-child(3):hover .feat-icon { transform: scale(1.15) rotate(6deg); }
+    .feat-card:nth-child(4):hover .feat-icon { transform: scale(1.15) rotate(-4deg) translateY(-2px); }
+    .feat-card:nth-child(5):hover .feat-icon { transform: scale(1.2); }
+    .feat-card:nth-child(6):hover .feat-icon { transform: scale(1.15) rotate(8deg); }
 
+    .feat-name { font-weight: 600; margin-bottom: 8px; font-size: 15px; }
+    .feat-desc { color: var(--text2); font-size: 13px; line-height: 1.7; }
+
+    /* --- Footer --- */
     .footer {
       text-align: center;
       padding: 40px 24px;
       border-top: 1px solid var(--border);
       color: var(--text2);
       font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+    .footer.v { opacity: 1; }
+
+    /* --- Reduced Motion --- */
+    @media (prefers-reduced-motion: reduce) {
+      .hero-title .hw,
+      .hero-sub .sw,
+      .hero-btns,
+      .hero-img-wrap,
+      .feat-eyebrow,
+      .feat-title,
+      .feat-sub,
+      .feat-card,
+      .footer {
+        opacity: 1 !important;
+        transform: none !important;
+        filter: none !important;
+        transition: none !important;
+      }
+      .hero-img-float { animation: none !important; }
+      .hero-img-glow { animation: none !important; }
+      .scroll-mouse::after { animation: none !important; }
+      .ln { transition: none !important; }
+    }
+
+    /* Noscript: show everything when JS is off */
+    @media (scripting: none) {
+      .hero-title .hw,
+      .hero-sub .sw,
+      .hero-btns,
+      .hero-img-wrap,
+      .feat-eyebrow,
+      .feat-title,
+      .feat-sub,
+      .feat-card,
+      .footer {
+        opacity: 1 !important;
+        transform: none !important;
+        filter: none !important;
+        transition: none !important;
+      }
     }
 
     @media (max-width: 640px) {
       .ln { padding: 14px 16px; }
+      .ln.scrolled { padding: 12px 16px; }
       .feat-grid { grid-template-columns: 1fr; }
-      .hero-btns { flex-direction: column; }
+      .hero-btns { flex-direction: column; align-items: center; }
+      .hero { padding: 80px 20px 60px; }
     }
   </style>
 </head>
 <body>
-  <nav class="ln">
+  <nav class="ln" id="mainNav">
     <a href="/" class="ln-brand"><span class="hl">H</span>ashHost</a>
     <div class="ln-btns">
       <a href="/login" class="btn btn-ghost btn-sm">Entrar</a>
@@ -202,74 +414,179 @@
   </nav>
 
   <div class="hero">
-    <h1 class="hero-title r" data-delay="0"><span class="hl">H</span>ashHost</h1>
-    <p class="hero-sub r" data-delay="120">Armazenamento e compartilhamento de mídias com links diretos para Discord e outras plataformas.</p>
-    <div class="hero-btns r" data-delay="200">
+    <h1 class="hero-title" id="heroTitle">
+      <span class="hw"><span class="hl">H</span>ash</span>
+      <span class="hw">Host</span>
+    </h1>
+    <p class="hero-sub" id="heroSub">
+      <span class="sw">Armazenamento</span>
+      <span class="sw">e</span>
+      <span class="sw">compartilhamento</span>
+      <span class="sw">de</span>
+      <span class="sw">mídias</span>
+      <span class="sw">com</span>
+      <span class="sw">links</span>
+      <span class="sw">diretos</span>
+      <span class="sw">para</span>
+      <span class="sw">Discord</span>
+      <span class="sw">e</span>
+      <span class="sw">outras</span>
+      <span class="sw">plataformas.</span>
+    </p>
+    <div class="hero-btns" id="heroBtns">
       <a href="/signup" class="btn btn-primary">Criar conta</a>
       <a href="/login" class="btn btn-ghost">Entrar</a>
     </div>
-    <div class="hero-img-wrap r-scale" data-delay="300">
+    <div class="hero-img-wrap" id="heroImg">
       <div class="hero-img-glow"></div>
-      <img class="hero-img" src="{{ url_for('static', filename='land.png') }}" alt="HashHost upload" loading="lazy">
+      <div class="hero-img-float">
+        <img class="hero-img" src="{{ url_for('static', filename='land.png') }}" alt="HashHost upload" loading="lazy">
+      </div>
+    </div>
+    <div class="scroll-indicator">
+      <div class="scroll-mouse"></div>
+      <span>Scroll</span>
     </div>
   </div>
 
   <section class="features">
-    <div class="feat-header r" data-delay="0">
-      <h2 class="feat-title">Funcionalidades</h2>
-      <p class="feat-sub">Tudo que você precisa para compartilhar mídias</p>
+    <div class="feat-header">
+      <div class="feat-eyebrow" id="featEyebrow">Funcionalidades</div>
+      <h2 class="feat-title" id="featTitle">Tudo que voce precisa</h2>
+      <p class="feat-sub" id="featSub">Compartilhe mídias com rapidez e controle total</p>
     </div>
-    <div class="feat-grid">
-      <div class="card feat-card r-scale d1" data-delay="0">
-        <div class="feat-icon">&#8682;</div>
-        <div class="feat-name">Upload rápido</div>
-        <div class="feat-desc">Envie imagens, GIFs, vídeos e áudios com drag and drop</div>
+    <div class="feat-grid" id="featGrid">
+      <div class="card feat-card" data-delay="0">
+        <div class="feat-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div class="feat-name">Upload rapido</div>
+        <div class="feat-desc">Envie imagens, GIFs, videos e audios com drag and drop</div>
       </div>
-      <div class="card feat-card r-scale d2" data-delay="0">
-        <div class="feat-icon">&#9741;</div>
+      <div class="card feat-card from-left" data-delay="80">
+        <div class="feat-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
         <div class="feat-name">Embeds para Discord</div>
-        <div class="feat-desc">Pré-visualização automática com cores e perfil personalizados</div>
+        <div class="feat-desc">Pre-visualizacao automatica com cores e perfil personalizados</div>
       </div>
-      <div class="card feat-card r-scale d3" data-delay="0">
-        <div class="feat-icon">&#9881;</div>
+      <div class="card feat-card from-right" data-delay="160">
+        <div class="feat-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        </div>
         <div class="feat-name">API e ShareX</div>
-        <div class="feat-desc">Upload automático via ShareX, OBS ou qualquer app por API</div>
+        <div class="feat-desc">Upload automatico via ShareX, OBS ou qualquer app por API</div>
       </div>
-      <div class="card feat-card r-scale d4" data-delay="0">
-        <div class="feat-icon">&#9201;</div>
+      <div class="card feat-card" data-delay="0">
+        <div class="feat-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
         <div class="feat-name">Tempo de vida</div>
-        <div class="feat-desc">Defina expiração: 1 hora, 3 dias, 1 semana, 1 mês ou permanente</div>
+        <div class="feat-desc">Defina expiracao: 1 hora, 3 dias, 1 semana, 1 mes ou permanente</div>
       </div>
-      <div class="card feat-card r-scale d5" data-delay="0">
-        <div class="feat-icon">&#128274;</div>
+      <div class="card feat-card from-left" data-delay="80">
+        <div class="feat-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
         <div class="feat-name">Convites</div>
-        <div class="feat-desc">Sistema de convites com permissões customizáveis</div>
+        <div class="feat-desc">Sistema de convites com permissoes customizaveis</div>
       </div>
-      <div class="card feat-card r-scale d6" data-delay="0">
-        <div class="feat-icon">&#9879;</div>
+      <div class="card feat-card from-right" data-delay="160">
+        <div class="feat-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
         <div class="feat-name">HashBin</div>
-        <div class="feat-desc">Compartilhe código e texto com syntax highlighting</div>
+        <div class="feat-desc">Compartilhe codigo e texto com syntax highlighting</div>
       </div>
     </div>
   </section>
 
-  <footer class="footer">HashHost</footer>
+  <footer class="footer" id="footer">HashHost</footer>
 
   <script src="/static/wavy-canvas.js"></script>
   <script>
     (function() {
-      var els = document.querySelectorAll('.r, .r-scale');
-      var obs = new IntersectionObserver(function(entries) {
+      'use strict';
+
+      /* --- Nav scroll effect --- */
+      var nav = document.getElementById('mainNav');
+      var lastScroll = 0;
+      function onScroll() {
+        var y = window.scrollY;
+        if (y > 60) {
+          nav.classList.add('scrolled');
+        } else {
+          nav.classList.remove('scrolled');
+        }
+        lastScroll = y;
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+
+      /* --- Hero title: word-by-word reveal with rotateX --- */
+      var titleWords = document.querySelectorAll('#heroTitle .hw');
+      titleWords.forEach(function(w, i) {
+        setTimeout(function() { w.classList.add('v'); }, 200 + i * 150);
+      });
+
+      /* --- Hero subtitle: word stagger with blur --- */
+      var subWords = document.querySelectorAll('#heroSub .sw');
+      subWords.forEach(function(w, i) {
+        setTimeout(function() { w.classList.add('v'); }, 600 + i * 60);
+      });
+
+      /* --- Hero buttons --- */
+      var heroBtns = document.getElementById('heroBtns');
+      setTimeout(function() { heroBtns.classList.add('v'); }, 600 + subWords.length * 60 + 200);
+
+      /* --- Hero image --- */
+      var heroImg = document.getElementById('heroImg');
+      setTimeout(function() { heroImg.classList.add('v'); }, 400);
+
+      /* --- Parallax on hero image --- */
+      var imgWrap = document.querySelector('.hero-img-wrap');
+      var ticking = false;
+      function parallax() {
+        var y = window.scrollY;
+        if (y < window.innerHeight) {
+          var factor = y * 0.15;
+          var scale = 1 - y * 0.0002;
+          imgWrap.style.transform = 'translateY(' + factor + 'px) scale(' + Math.max(scale, 0.9) + ')';
+          imgWrap.style.opacity = Math.max(1 - y / (window.innerHeight * 0.8), 0);
+        }
+        ticking = false;
+      }
+      window.addEventListener('scroll', function() {
+        if (!ticking) {
+          requestAnimationFrame(parallax);
+          ticking = true;
+        }
+      }, { passive: true });
+
+      /* --- Features: IntersectionObserver with varied entrances --- */
+      var featEls = [
+        document.getElementById('featEyebrow'),
+        document.getElementById('featTitle'),
+        document.getElementById('featSub')
+      ];
+      var featCards = document.querySelectorAll('.feat-card');
+      var footer = document.getElementById('footer');
+
+      var allFeat = featEls.concat(Array.prototype.slice.call(featCards)).concat([footer]);
+      var featObs = new IntersectionObserver(function(entries) {
         entries.forEach(function(e) {
           if (e.isIntersecting) {
             var delay = parseInt(e.target.dataset.delay) || 0;
             setTimeout(function() { e.target.classList.add('v'); }, delay);
-            obs.unobserve(e.target);
+            featObs.unobserve(e.target);
           }
         });
-      }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-      els.forEach(function(el) { obs.observe(el); });
+      }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
+      allFeat.forEach(function(el) {
+        if (el) featObs.observe(el);
+      });
+
+      /* --- Feature card glare tracking --- */
       document.querySelectorAll('.feat-card').forEach(function(c) {
         c.addEventListener('mousemove', function(e) {
           var r = c.getBoundingClientRect();
@@ -277,6 +594,29 @@
           c.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
         });
       });
+
+      /* --- Button glow follow cursor --- */
+      document.querySelectorAll('.hero-btns .btn-primary').forEach(function(btn) {
+        btn.addEventListener('mousemove', function(e) {
+          var r = btn.getBoundingClientRect();
+          btn.style.setProperty('--bx', ((e.clientX - r.left) / r.width * 100) + '%');
+          btn.style.setProperty('--by', ((e.clientY - r.top) / r.height * 100) + '%');
+        });
+      });
+
+      /* --- Scroll-linked hero fade --- */
+      function heroFade() {
+        var y = window.scrollY;
+        var hero = document.querySelector('.hero');
+        if (!hero) return;
+        var h = hero.offsetHeight;
+        var progress = Math.min(y / (h * 0.6), 1);
+        hero.style.opacity = 1 - progress * 0.4;
+      }
+      window.addEventListener('scroll', function() {
+        requestAnimationFrame(heroFade);
+      }, { passive: true });
+
     })();
   </script>
 </body>
