@@ -8,12 +8,9 @@
   <style>
     html { scroll-behavior: smooth; }
 
-    /* --- Nav --- */
     .landing-nav {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
+      top: 0; left: 0; right: 0;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -22,6 +19,13 @@
       background: rgba(10, 10, 10, 0.6);
       backdrop-filter: blur(16px);
       border-bottom: 1px solid rgba(255,255,255,0.06);
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    .landing-nav.anim-in {
+      transition: opacity 0.6s ease, transform 0.6s ease;
+      opacity: 1;
+      transform: translateY(0);
     }
     .landing-brand {
       font-size: 20px;
@@ -44,28 +48,34 @@
       padding: 60px 24px 80px;
       overflow: hidden;
     }
+
     .hero-title {
-      font-size: clamp(40px, 8vw, 80px);
+      font-size: clamp(44px, 9vw, 88px);
       font-weight: 700;
       letter-spacing: -0.04em;
       line-height: 1.05;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
     }
-    .hero-title .line {
-      display: block;
-      overflow: hidden;
-    }
-    .hero-title .line-inner {
-      display: block;
-      transform: translateY(110%);
-      animation: lineReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-    .hero-title .line:nth-child(2) .line-inner { animation-delay: 0.12s; }
     .hero-title .hl { color: var(--accent); }
 
-    @keyframes lineReveal {
-      from { transform: translateY(110%); }
-      to { transform: translateY(0); }
+    /* Word reveal */
+    .word-wrap {
+      display: inline-block;
+      overflow: hidden;
+      vertical-align: bottom;
+      padding-bottom: 4px;
+    }
+    .word-inner {
+      display: inline-block;
+      transform: translateY(120%);
+      opacity: 0;
+      filter: blur(8px);
+      transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease, filter 0.8s ease;
+    }
+    .word-inner.show {
+      transform: translateY(0);
+      opacity: 1;
+      filter: blur(0);
     }
 
     .hero-tagline {
@@ -75,65 +85,85 @@
       max-width: 520px;
       line-height: 1.6;
       opacity: 0;
-      transform: translateY(20px);
-      animation: fadeUp 0.7s ease 0.4s forwards;
+      transform: translateY(30px);
+      filter: blur(6px);
+      transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), filter 0.8s ease;
     }
+    .hero-tagline.show {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+
     .hero-buttons {
       display: flex;
       gap: 12px;
       opacity: 0;
-      transform: translateY(20px);
-      animation: fadeUp 0.7s ease 0.55s forwards;
+      transform: translateY(30px);
+      transition: opacity 0.8s ease 0.1s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s;
     }
-
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+    .hero-buttons.show {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     /* --- Features --- */
     .features {
-      padding: 80px 24px 100px;
+      padding: 80px 24px 120px;
       max-width: 1040px;
       margin: 0 auto;
     }
     .features-header {
       text-align: center;
       margin-bottom: 56px;
+      opacity: 0;
+      transform: translateY(40px) scale(0.95);
+      filter: blur(6px);
+      transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), filter 0.8s ease;
     }
-    .features-title {
-      font-size: 28px;
-      margin-bottom: 12px;
+    .features-header.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
     }
-    .features-subtitle {
-      color: var(--text2);
-      font-size: 15px;
-    }
+    .features-title { font-size: 28px; margin-bottom: 12px; }
+    .features-subtitle { color: var(--text2); font-size: 15px; }
+
     .features-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 16px;
     }
+
     .feature-card {
       padding: 32px 24px;
       text-align: center;
       position: relative;
       overflow: hidden;
-      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.3s ease;
+      opacity: 0;
+      transform: translateY(50px) scale(0.88);
+      filter: blur(8px);
+      transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), filter 0.7s ease, box-shadow 0.4s ease, border-color 0.3s ease;
+    }
+    .feature-card.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
     }
     .feature-card::after {
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(0,112,243,0.08) 0%, transparent 60%);
+      background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(0,112,243,0.1) 0%, transparent 60%);
       opacity: 0;
       transition: opacity 0.3s ease;
       pointer-events: none;
     }
     .feature-card:hover {
-      transform: translateY(-8px) scale(1.02);
-      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
-      border-color: rgba(0,112,243,0.3);
+      transform: translateY(-8px) scale(1.03) !important;
+      filter: blur(0) !important;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      border-color: rgba(0,112,243,0.4);
     }
     .feature-card:hover::after { opacity: 1; }
 
@@ -152,43 +182,12 @@
       transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease;
     }
     .feature-card:hover .feature-icon {
-      transform: scale(1.15) rotate(-4deg);
+      transform: scale(1.2) rotate(-6deg);
       background: rgba(0, 112, 243, 0.15);
     }
-    .feature-title {
-      font-weight: 600;
-      margin-bottom: 8px;
-      font-size: 15px;
-    }
-    .feature-desc {
-      color: var(--text2);
-      font-size: 13px;
-      line-height: 1.6;
-    }
+    .feature-title { font-weight: 600; margin-bottom: 8px; font-size: 15px; }
+    .feature-desc { color: var(--text2); font-size: 13px; line-height: 1.6; }
 
-    /* --- Scroll reveal --- */
-    .sr {
-      opacity: 0;
-      transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .sr.sr-up { transform: translateY(40px); }
-    .sr.sr-left { transform: translateX(-40px); }
-    .sr.sr-right { transform: translateX(40px); }
-    .sr.sr-scale { transform: scale(0.9); }
-    .sr.visible {
-      opacity: 1;
-      transform: translateY(0) translateX(0) scale(1);
-    }
-
-    /* stagger delays */
-    .sr-delay-1 { transition-delay: 0.06s; }
-    .sr-delay-2 { transition-delay: 0.12s; }
-    .sr-delay-3 { transition-delay: 0.18s; }
-    .sr-delay-4 { transition-delay: 0.24s; }
-    .sr-delay-5 { transition-delay: 0.30s; }
-    .sr-delay-6 { transition-delay: 0.36s; }
-
-    /* --- Footer --- */
     .footer {
       text-align: center;
       padding: 40px 24px;
@@ -205,7 +204,7 @@
   </style>
 </head>
 <body>
-  <nav class="landing-nav">
+  <nav class="landing-nav" id="nav">
     <a href="/" class="landing-brand"><span class="hl">H</span>ashHost</a>
     <div class="landing-nav-buttons">
       <a href="/login" class="btn btn-ghost btn-sm">Entrar</a>
@@ -214,48 +213,46 @@
   </nav>
 
   <div class="hero">
-    <h1 class="hero-title">
-      <span class="line"><span class="line-inner"><span class="hl">H</span>ashHost</span></span>
-    </h1>
-    <p class="hero-tagline">Armazenamento e compartilhamento de mídias com links diretos para Discord e outras plataformas.</p>
-    <div class="hero-buttons">
+    <h1 class="hero-title" id="heroTitle"></h1>
+    <p class="hero-tagline" id="heroTagline">Armazenamento e compartilhamento de mídias com links diretos para Discord e outras plataformas.</p>
+    <div class="hero-buttons" id="heroButtons">
       <a href="/signup" class="btn btn-primary">Criar conta</a>
       <a href="/login" class="btn btn-ghost">Entrar</a>
     </div>
   </div>
 
   <section class="features">
-    <div class="features-header sr sr-up">
+    <div class="features-header" id="featuresHeader">
       <h2 class="features-title">Funcionalidades</h2>
       <p class="features-subtitle">Tudo que você precisa para compartilhar mídias</p>
     </div>
     <div class="features-grid">
-      <div class="card feature-card sr sr-scale sr-delay-1" data-glare>
+      <div class="card feature-card" data-delay="0">
         <div class="feature-icon">&#8682;</div>
         <div class="feature-title">Upload rápido</div>
         <div class="feature-desc">Envie imagens, GIFs, vídeos e áudios com drag and drop</div>
       </div>
-      <div class="card feature-card sr sr-scale sr-delay-2" data-glare>
+      <div class="card feature-card" data-delay="80">
         <div class="feature-icon">&#9741;</div>
         <div class="feature-title">Embeds para Discord</div>
         <div class="feature-desc">Pré-visualização automática com cores e perfil personalizados</div>
       </div>
-      <div class="card feature-card sr sr-scale sr-delay-3" data-glare>
+      <div class="card feature-card" data-delay="160">
         <div class="feature-icon">&#9881;</div>
         <div class="feature-title">API e ShareX</div>
         <div class="feature-desc">Upload automático via ShareX, OBS ou qualquer app por API</div>
       </div>
-      <div class="card feature-card sr sr-scale sr-delay-4" data-glare>
+      <div class="card feature-card" data-delay="240">
         <div class="feature-icon">&#9201;</div>
         <div class="feature-title">Tempo de vida</div>
         <div class="feature-desc">Defina expiração: 1 hora, 3 dias, 1 semana, 1 mês ou permanente</div>
       </div>
-      <div class="card feature-card sr sr-scale sr-delay-5" data-glare>
+      <div class="card feature-card" data-delay="320">
         <div class="feature-icon">&#128274;</div>
         <div class="feature-title">Convites</div>
         <div class="feature-desc">Sistema de convites com permissões customizáveis</div>
       </div>
-      <div class="card feature-card sr sr-scale sr-delay-6" data-glare>
+      <div class="card feature-card" data-delay="400">
         <div class="feature-icon">&#9879;</div>
         <div class="feature-title">HashBin</div>
         <div class="feature-desc">Compartilhe código e texto com syntax highlighting</div>
@@ -263,34 +260,64 @@
     </div>
   </section>
 
-  <footer class="footer">
-    HashHost
-  </footer>
+  <footer class="footer">HashHost</footer>
 
   <script src="/static/wavy-canvas.js"></script>
   <script>
     (function() {
-      /* Scroll reveal */
-      var srs = document.querySelectorAll('.sr');
+      /* Split hero title into words with wrappers */
+      var title = document.getElementById('heroTitle');
+      var words = ['H', 'ashHost'];
+      var html = '';
+      words.forEach(function(w, i) {
+        var isH = i === 0;
+        html += '<span class="word-wrap"><span class="word-inner" data-delay="' + (i * 180) + '">'
+              + (isH ? '<span class="hl">' + w + '</span>' : w)
+              + '</span></span>';
+      });
+      title.innerHTML = html;
+
+      /* Trigger hero animations after small delay */
+      setTimeout(function() {
+        document.getElementById('nav').classList.add('anim-in');
+
+        var inners = title.querySelectorAll('.word-inner');
+        inners.forEach(function(el) {
+          setTimeout(function() { el.classList.add('show'); }, parseInt(el.dataset.delay) + 200);
+        });
+
+        setTimeout(function() {
+          document.getElementById('heroTagline').classList.add('show');
+        }, 500);
+
+        setTimeout(function() {
+          document.getElementById('heroButtons').classList.add('show');
+        }, 700);
+      }, 100);
+
+      /* Scroll reveal for features */
       var observer = new IntersectionObserver(function(entries) {
         entries.forEach(function(entry) {
           if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
+            var delay = parseInt(entry.target.dataset.delay) || 0;
+            setTimeout(function() {
+              entry.target.classList.add('show');
+            }, delay);
             observer.unobserve(entry.target);
           }
         });
-      }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
-      srs.forEach(function(el) { observer.observe(el); });
+      }, { threshold: 0.1, rootMargin: '0px 0px -20px 0px' });
+
+      document.querySelectorAll('.feature-card, .features-header').forEach(function(el) {
+        observer.observe(el);
+      });
 
       /* Glare follow cursor */
-      var glares = document.querySelectorAll('[data-glare]');
-      glares.forEach(function(card) {
+      document.querySelectorAll('.feature-card').forEach(function(card) {
         card.addEventListener('mousemove', function(e) {
           var r = card.getBoundingClientRect();
-          var x = ((e.clientX - r.left) / r.width * 100);
-          var y = ((e.clientY - r.top) / r.height * 100);
-          card.style.setProperty('--mx', x + '%');
-          card.style.setProperty('--my', y + '%');
+          card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
+          card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
         });
       });
     })();
