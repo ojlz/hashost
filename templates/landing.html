@@ -7,8 +7,10 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     html { scroll-behavior: smooth; }
+    body { overflow-x: hidden; }
 
-    .landing-nav {
+    /* --- Nav --- */
+    .ln {
       position: fixed;
       top: 0; left: 0; right: 0;
       display: flex;
@@ -19,23 +21,16 @@
       background: rgba(10, 10, 10, 0.6);
       backdrop-filter: blur(16px);
       border-bottom: 1px solid rgba(255,255,255,0.06);
-      opacity: 0;
-      transform: translateY(-20px);
     }
-    .landing-nav.anim-in {
-      transition: opacity 0.6s ease, transform 0.6s ease;
-      opacity: 1;
-      transform: translateY(0);
-    }
-    .landing-brand {
+    .ln-brand {
       font-size: 20px;
       font-weight: 700;
       letter-spacing: -0.03em;
       color: var(--text1);
       text-decoration: none;
     }
-    .landing-brand .hl { color: var(--accent); }
-    .landing-nav-buttons { display: flex; gap: 10px; }
+    .ln-brand .hl { color: var(--accent); }
+    .ln-btns { display: flex; gap: 10px; }
 
     /* --- Hero --- */
     .hero {
@@ -45,112 +40,107 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 60px 24px 80px;
-      overflow: hidden;
+      padding: 100px 24px 60px;
+      position: relative;
     }
-
     .hero-title {
       font-size: clamp(44px, 9vw, 88px);
       font-weight: 700;
       letter-spacing: -0.04em;
       line-height: 1.05;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
     .hero-title .hl { color: var(--accent); }
-
-    /* Word reveal */
-    .word-wrap {
-      display: inline-block;
-      overflow: hidden;
-      vertical-align: bottom;
-      padding-bottom: 4px;
-    }
-    .word-inner {
-      display: inline-block;
-      transform: translateY(120%);
-      opacity: 0;
-      filter: blur(8px);
-      transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease, filter 0.8s ease;
-    }
-    .word-inner.show {
-      transform: translateY(0);
-      opacity: 1;
-      filter: blur(0);
-    }
-
-    .hero-tagline {
+    .hero-sub {
       color: var(--text2);
-      font-size: clamp(15px, 2vw, 19px);
-      margin-bottom: 40px;
-      max-width: 520px;
+      font-size: clamp(15px, 2vw, 18px);
+      max-width: 480px;
       line-height: 1.6;
-      opacity: 0;
-      transform: translateY(30px);
-      filter: blur(6px);
-      transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), filter 0.8s ease;
+      margin-bottom: 36px;
     }
-    .hero-tagline.show {
-      opacity: 1;
-      transform: translateY(0);
-      filter: blur(0);
-    }
-
-    .hero-buttons {
+    .hero-btns {
       display: flex;
       gap: 12px;
-      opacity: 0;
-      transform: translateY(30px);
-      transition: opacity 0.8s ease 0.1s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s;
+      margin-bottom: 60px;
     }
-    .hero-buttons.show {
+
+    /* --- Hero Image --- */
+    .hero-img-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 820px;
+      margin: 0 auto;
+    }
+    .hero-img-glow {
+      position: absolute;
+      inset: -40px;
+      background: radial-gradient(ellipse at 50% 80%, rgba(0,112,243,0.15) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .hero-img {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+    }
+
+    /* --- Reveal --- */
+    .r {
+      opacity: 0;
+      transform: translateY(50px);
+      transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .r.v {
       opacity: 1;
       transform: translateY(0);
     }
+    .r-scale {
+      opacity: 0;
+      transform: translateY(40px) scale(0.92);
+      transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .r-scale.v {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* stagger */
+    .d1 { transition-delay: 0.08s; }
+    .d2 { transition-delay: 0.16s; }
+    .d3 { transition-delay: 0.24s; }
+    .d4 { transition-delay: 0.32s; }
+    .d5 { transition-delay: 0.40s; }
+    .d6 { transition-delay: 0.48s; }
 
     /* --- Features --- */
     .features {
-      padding: 80px 24px 120px;
+      padding: 100px 24px 120px;
       max-width: 1040px;
       margin: 0 auto;
     }
-    .features-header {
+    .feat-header {
       text-align: center;
       margin-bottom: 56px;
-      opacity: 0;
-      transform: translateY(40px) scale(0.95);
-      filter: blur(6px);
-      transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), filter 0.8s ease;
     }
-    .features-header.show {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-      filter: blur(0);
-    }
-    .features-title { font-size: 28px; margin-bottom: 12px; }
-    .features-subtitle { color: var(--text2); font-size: 15px; }
+    .feat-title { font-size: 28px; margin-bottom: 12px; }
+    .feat-sub { color: var(--text2); font-size: 15px; }
 
-    .features-grid {
+    .feat-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 16px;
     }
-
-    .feature-card {
+    .feat-card {
       padding: 32px 24px;
       text-align: center;
       position: relative;
       overflow: hidden;
-      opacity: 0;
-      transform: translateY(50px) scale(0.88);
-      filter: blur(8px);
-      transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), filter 0.7s ease, box-shadow 0.4s ease, border-color 0.3s ease;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.3s ease;
     }
-    .feature-card.show {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-      filter: blur(0);
-    }
-    .feature-card::after {
+    .feat-card::after {
       content: '';
       position: absolute;
       inset: 0;
@@ -159,34 +149,33 @@
       transition: opacity 0.3s ease;
       pointer-events: none;
     }
-    .feature-card:hover {
-      transform: translateY(-8px) scale(1.03) !important;
-      filter: blur(0) !important;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-      border-color: rgba(0,112,243,0.4);
+    .feat-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+      border-color: rgba(0,112,243,0.3);
     }
-    .feature-card:hover::after { opacity: 1; }
+    .feat-card:hover::after { opacity: 1; }
 
-    .feature-icon {
-      width: 52px;
-      height: 52px;
-      border-radius: 14px;
+    .feat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
       background: rgba(0, 112, 243, 0.08);
       border: 1px solid rgba(0, 112, 243, 0.15);
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 18px;
+      margin-bottom: 16px;
       color: var(--accent);
-      font-size: 22px;
+      font-size: 20px;
       transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease;
     }
-    .feature-card:hover .feature-icon {
-      transform: scale(1.2) rotate(-6deg);
+    .feat-card:hover .feat-icon {
+      transform: scale(1.15) rotate(-5deg);
       background: rgba(0, 112, 243, 0.15);
     }
-    .feature-title { font-weight: 600; margin-bottom: 8px; font-size: 15px; }
-    .feature-desc { color: var(--text2); font-size: 13px; line-height: 1.6; }
+    .feat-name { font-weight: 600; margin-bottom: 6px; font-size: 15px; }
+    .feat-desc { color: var(--text2); font-size: 13px; line-height: 1.6; }
 
     .footer {
       text-align: center;
@@ -197,65 +186,69 @@
     }
 
     @media (max-width: 640px) {
-      .landing-nav { padding: 14px 16px; }
-      .features-grid { grid-template-columns: 1fr; }
-      .hero-buttons { flex-direction: column; }
+      .ln { padding: 14px 16px; }
+      .feat-grid { grid-template-columns: 1fr; }
+      .hero-btns { flex-direction: column; }
     }
   </style>
 </head>
 <body>
-  <nav class="landing-nav" id="nav">
-    <a href="/" class="landing-brand"><span class="hl">H</span>ashHost</a>
-    <div class="landing-nav-buttons">
+  <nav class="ln">
+    <a href="/" class="ln-brand"><span class="hl">H</span>ashHost</a>
+    <div class="ln-btns">
       <a href="/login" class="btn btn-ghost btn-sm">Entrar</a>
       <a href="/signup" class="btn btn-primary btn-sm">Criar conta</a>
     </div>
   </nav>
 
   <div class="hero">
-    <h1 class="hero-title" id="heroTitle"></h1>
-    <p class="hero-tagline" id="heroTagline">Armazenamento e compartilhamento de mídias com links diretos para Discord e outras plataformas.</p>
-    <div class="hero-buttons" id="heroButtons">
+    <h1 class="hero-title r" data-delay="0"><span class="hl">H</span>ashHost</h1>
+    <p class="hero-sub r" data-delay="120">Armazenamento e compartilhamento de mídias com links diretos para Discord e outras plataformas.</p>
+    <div class="hero-btns r" data-delay="200">
       <a href="/signup" class="btn btn-primary">Criar conta</a>
       <a href="/login" class="btn btn-ghost">Entrar</a>
+    </div>
+    <div class="hero-img-wrap r-scale" data-delay="300">
+      <div class="hero-img-glow"></div>
+      <img class="hero-img" src="{{ url_for('static', filename='land.png') }}" alt="HashHost upload" loading="lazy">
     </div>
   </div>
 
   <section class="features">
-    <div class="features-header" id="featuresHeader">
-      <h2 class="features-title">Funcionalidades</h2>
-      <p class="features-subtitle">Tudo que você precisa para compartilhar mídias</p>
+    <div class="feat-header r" data-delay="0">
+      <h2 class="feat-title">Funcionalidades</h2>
+      <p class="feat-sub">Tudo que você precisa para compartilhar mídias</p>
     </div>
-    <div class="features-grid">
-      <div class="card feature-card" data-delay="0">
-        <div class="feature-icon">&#8682;</div>
-        <div class="feature-title">Upload rápido</div>
-        <div class="feature-desc">Envie imagens, GIFs, vídeos e áudios com drag and drop</div>
+    <div class="feat-grid">
+      <div class="card feat-card r-scale d1" data-delay="0">
+        <div class="feat-icon">&#8682;</div>
+        <div class="feat-name">Upload rápido</div>
+        <div class="feat-desc">Envie imagens, GIFs, vídeos e áudios com drag and drop</div>
       </div>
-      <div class="card feature-card" data-delay="80">
-        <div class="feature-icon">&#9741;</div>
-        <div class="feature-title">Embeds para Discord</div>
-        <div class="feature-desc">Pré-visualização automática com cores e perfil personalizados</div>
+      <div class="card feat-card r-scale d2" data-delay="0">
+        <div class="feat-icon">&#9741;</div>
+        <div class="feat-name">Embeds para Discord</div>
+        <div class="feat-desc">Pré-visualização automática com cores e perfil personalizados</div>
       </div>
-      <div class="card feature-card" data-delay="160">
-        <div class="feature-icon">&#9881;</div>
-        <div class="feature-title">API e ShareX</div>
-        <div class="feature-desc">Upload automático via ShareX, OBS ou qualquer app por API</div>
+      <div class="card feat-card r-scale d3" data-delay="0">
+        <div class="feat-icon">&#9881;</div>
+        <div class="feat-name">API e ShareX</div>
+        <div class="feat-desc">Upload automático via ShareX, OBS ou qualquer app por API</div>
       </div>
-      <div class="card feature-card" data-delay="240">
-        <div class="feature-icon">&#9201;</div>
-        <div class="feature-title">Tempo de vida</div>
-        <div class="feature-desc">Defina expiração: 1 hora, 3 dias, 1 semana, 1 mês ou permanente</div>
+      <div class="card feat-card r-scale d4" data-delay="0">
+        <div class="feat-icon">&#9201;</div>
+        <div class="feat-name">Tempo de vida</div>
+        <div class="feat-desc">Defina expiração: 1 hora, 3 dias, 1 semana, 1 mês ou permanente</div>
       </div>
-      <div class="card feature-card" data-delay="320">
-        <div class="feature-icon">&#128274;</div>
-        <div class="feature-title">Convites</div>
-        <div class="feature-desc">Sistema de convites com permissões customizáveis</div>
+      <div class="card feat-card r-scale d5" data-delay="0">
+        <div class="feat-icon">&#128274;</div>
+        <div class="feat-name">Convites</div>
+        <div class="feat-desc">Sistema de convites com permissões customizáveis</div>
       </div>
-      <div class="card feature-card" data-delay="400">
-        <div class="feature-icon">&#9879;</div>
-        <div class="feature-title">HashBin</div>
-        <div class="feature-desc">Compartilhe código e texto com syntax highlighting</div>
+      <div class="card feat-card r-scale d6" data-delay="0">
+        <div class="feat-icon">&#9879;</div>
+        <div class="feat-name">HashBin</div>
+        <div class="feat-desc">Compartilhe código e texto com syntax highlighting</div>
       </div>
     </div>
   </section>
@@ -265,59 +258,23 @@
   <script src="/static/wavy-canvas.js"></script>
   <script>
     (function() {
-      /* Split hero title into words with wrappers */
-      var title = document.getElementById('heroTitle');
-      var words = ['H', 'ashHost'];
-      var html = '';
-      words.forEach(function(w, i) {
-        var isH = i === 0;
-        html += '<span class="word-wrap"><span class="word-inner" data-delay="' + (i * 180) + '">'
-              + (isH ? '<span class="hl">' + w + '</span>' : w)
-              + '</span></span>';
-      });
-      title.innerHTML = html;
-
-      /* Trigger hero animations after small delay */
-      setTimeout(function() {
-        document.getElementById('nav').classList.add('anim-in');
-
-        var inners = title.querySelectorAll('.word-inner');
-        inners.forEach(function(el) {
-          setTimeout(function() { el.classList.add('show'); }, parseInt(el.dataset.delay) + 200);
-        });
-
-        setTimeout(function() {
-          document.getElementById('heroTagline').classList.add('show');
-        }, 500);
-
-        setTimeout(function() {
-          document.getElementById('heroButtons').classList.add('show');
-        }, 700);
-      }, 100);
-
-      /* Scroll reveal for features */
-      var observer = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
-          if (entry.isIntersecting) {
-            var delay = parseInt(entry.target.dataset.delay) || 0;
-            setTimeout(function() {
-              entry.target.classList.add('show');
-            }, delay);
-            observer.unobserve(entry.target);
+      var els = document.querySelectorAll('.r, .r-scale');
+      var obs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) {
+          if (e.isIntersecting) {
+            var delay = parseInt(e.target.dataset.delay) || 0;
+            setTimeout(function() { e.target.classList.add('v'); }, delay);
+            obs.unobserve(e.target);
           }
         });
-      }, { threshold: 0.1, rootMargin: '0px 0px -20px 0px' });
+      }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+      els.forEach(function(el) { obs.observe(el); });
 
-      document.querySelectorAll('.feature-card, .features-header').forEach(function(el) {
-        observer.observe(el);
-      });
-
-      /* Glare follow cursor */
-      document.querySelectorAll('.feature-card').forEach(function(card) {
-        card.addEventListener('mousemove', function(e) {
-          var r = card.getBoundingClientRect();
-          card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
-          card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
+      document.querySelectorAll('.feat-card').forEach(function(c) {
+        c.addEventListener('mousemove', function(e) {
+          var r = c.getBoundingClientRect();
+          c.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
+          c.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
         });
       });
     })();
