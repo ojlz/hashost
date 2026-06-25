@@ -54,45 +54,59 @@
       position: relative;
     }
 
-    /* Hero title — word reveal with 3D flip */
+    /* Hero title — animated gradient text */
     .hero-title {
-      font-size: clamp(44px, 9vw, 88px);
-      font-weight: 700;
+      font-size: clamp(52px, 11vw, 100px);
+      font-weight: 800;
       letter-spacing: -0.04em;
       line-height: 1.05;
       margin-bottom: 20px;
       display: inline-flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 0 0.25em;
+      gap: 0 0.15em;
       text-wrap: balance;
       perspective: 800px;
     }
     .hero-title .hw {
       display: inline-block;
       opacity: 0;
-      transform: translateY(40px) rotateX(40deg);
+      transform: translateY(50px) rotateX(45deg);
       transform-origin: bottom center;
-      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-                  transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .hero-title .hw.v {
       opacity: 1;
       transform: translateY(0) rotateX(0deg);
     }
-    .hero-title .hl { color: var(--accent); }
+    /* Gradient text on "Hash" */
+    .hero-title .grad {
+      background: linear-gradient(135deg, var(--accent), #00c6ff, #7c3aed, var(--accent));
+      background-size: 300% 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientShift 6s ease infinite;
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
 
     /* Hero subtitle — word stagger with blur */
     .hero-sub {
-      font-size: clamp(15px, 2vw, 18px);
-      max-width: 520px;
+      font-size: clamp(16px, 2.2vw, 20px);
+      max-width: 540px;
       line-height: 1.7;
-      margin-bottom: 36px;
+      margin-bottom: 40px;
       display: inline-flex;
       flex-wrap: wrap;
       justify-content: center;
       gap: 0 0.3em;
       text-wrap: balance;
+      color: #b0b0b0;
     }
     .hero-sub .sw {
       display: inline-block;
@@ -109,10 +123,10 @@
       transform: translateY(0);
     }
 
-    /* Hero buttons — press feedback */
+    /* Hero buttons — ripple + cursor glow */
     .hero-btns {
       display: flex;
-      gap: 12px;
+      gap: 14px;
       margin-bottom: 60px;
       opacity: 0;
       transform: translateY(20px);
@@ -124,9 +138,36 @@
     }
     .hero-btns .btn {
       transition: transform 0.16s cubic-bezier(0.23, 1, 0.32, 1), background 0.15s ease, box-shadow 0.15s ease;
+      position: relative;
+      overflow: hidden;
     }
     .hero-btns .btn:active {
       transform: scale(0.97);
+    }
+    /* Ripple */
+    .hero-btns .btn .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      transform: scale(0);
+      animation: rippleAnim 0.6s ease-out;
+      pointer-events: none;
+    }
+    @keyframes rippleAnim {
+      to { transform: scale(4); opacity: 0; }
+    }
+    /* Cursor glow on primary */
+    .hero-btns .btn-primary::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at var(--bx, 50%) var(--by, 50%), rgba(255,255,255,0.18) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .hero-btns .btn-primary:hover::after { opacity: 1; }
     }
 
     /* --- Hero Image --- */
@@ -171,8 +212,6 @@
         box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,112,243,0.15), 0 0 60px rgba(0,112,243,0.08);
       }
     }
-
-    /* Parallax float on hero image */
     .hero-img-float {
       animation: imgFloat 6s ease-in-out infinite;
     }
@@ -181,7 +220,7 @@
       50% { transform: translateY(-8px); }
     }
 
-    /* --- Scroll indicator — fades on scroll --- */
+    /* --- Scroll indicator --- */
     .scroll-indicator {
       position: absolute;
       bottom: 40px;
@@ -226,15 +265,52 @@
       50% { opacity: 0.3; transform: translateX(-50%) translateY(10px); }
     }
 
+    /* --- Stats Section --- */
+    .stats {
+      padding: 60px 24px 80px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      text-align: center;
+    }
+    .stat-item {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+    }
+    .stat-item.v { opacity: 1; transform: translateY(0); }
+    .stat-number {
+      font-size: clamp(36px, 5vw, 48px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, var(--accent), #00c6ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+    }
+    .stat-label {
+      font-size: 13px;
+      color: var(--text2);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
     /* --- Features Section --- */
     .features {
-      padding: 100px 24px 120px;
+      padding: 80px 24px 120px;
       max-width: 1080px;
       margin: 0 auto;
     }
     .feat-header {
       text-align: center;
       margin-bottom: 64px;
+      position: relative;
     }
     .feat-eyebrow {
       display: inline-block;
@@ -250,7 +326,8 @@
     }
     .feat-eyebrow.v { opacity: 1; transform: translateY(0); }
     .feat-title {
-      font-size: clamp(24px, 4vw, 32px);
+      font-size: clamp(28px, 5vw, 40px);
+      font-weight: 800;
       margin-bottom: 12px;
       opacity: 0;
       transform: translateY(20px);
@@ -259,15 +336,15 @@
     }
     .feat-title.v { opacity: 1; transform: translateY(0); }
     .feat-sub {
-      color: var(--text2);
-      font-size: 15px;
+      color: #b0b0b0;
+      font-size: 16px;
       opacity: 0;
       transform: translateY(16px);
       transition: opacity 0.4s ease-out 0.16s, transform 0.4s ease-out 0.16s;
     }
     .feat-sub.v { opacity: 1; transform: translateY(0); }
 
-    /* Feature grid — reveal wrapper separates reveal transform from hover transform */
+    /* Feature grid */
     .feat-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -290,15 +367,35 @@
       transform: translateY(0) translateX(0);
     }
 
-    /* Card hover — separate from reveal, GPU-only */
+    /* Card — gradient border on hover */
     .feat-card {
       padding: 32px 24px;
       text-align: center;
       position: relative;
       overflow: hidden;
       transition: transform 0.25s cubic-bezier(0.23, 1, 0.32, 1),
-                  box-shadow 0.25s ease-out,
-                  border-color 0.25s ease-out;
+                  box-shadow 0.25s ease-out;
+      background: var(--surface);
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background-clip: padding-box;
+    }
+    /* Gradient border pseudo-element */
+    .feat-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      padding: 1px;
+      background: linear-gradient(135deg, transparent 40%, rgba(0,112,243,0.3) 50%, transparent 60%);
+      background-size: 250% 250%;
+      background-position: 100% 100%;
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      transition: background-position 0.5s ease-out, opacity 0.3s ease-out;
+      opacity: 0;
     }
     .feat-card:active {
       transform: scale(0.98) !important;
@@ -308,7 +405,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(0,112,243,0.08) 0%, transparent 60%);
+      background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(0,112,243,0.06) 0%, transparent 60%);
       opacity: 0;
       transition: opacity 0.25s ease-out;
       pointer-events: none;
@@ -317,7 +414,10 @@
       .feat-card:hover {
         transform: translateY(-6px);
         box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-        border-color: rgba(0,112,243,0.3);
+      }
+      .feat-card:hover::before {
+        opacity: 1;
+        background-position: 0% 0%;
       }
       .feat-card:hover::after { opacity: 1; }
     }
@@ -351,8 +451,38 @@
       .feat-card:nth-child(6):hover .feat-icon { transform: scale(1.15) rotate(8deg); }
     }
 
-    .feat-name { font-weight: 600; margin-bottom: 8px; font-size: 15px; }
-    .feat-desc { color: var(--text2); font-size: 13px; line-height: 1.7; }
+    .feat-name { font-weight: 700; margin-bottom: 8px; font-size: 15px; }
+    .feat-desc { color: #999; font-size: 13px; line-height: 1.7; }
+
+    /* --- CTA Section --- */
+    .cta {
+      padding: 80px 24px 100px;
+      text-align: center;
+    }
+    .cta-box {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 48px 32px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(0,112,243,0.08) 0%, rgba(124,58,237,0.06) 100%);
+      border: 1px solid rgba(0,112,243,0.15);
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+    .cta-box.v { opacity: 1; transform: translateY(0); }
+    .cta-title {
+      font-size: clamp(22px, 3.5vw, 30px);
+      font-weight: 800;
+      margin-bottom: 12px;
+      text-wrap: balance;
+    }
+    .cta-sub {
+      color: #999;
+      font-size: 15px;
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
 
     /* --- Footer --- */
     .footer {
@@ -376,12 +506,15 @@
       .feat-title,
       .feat-sub,
       .feat-reveal,
+      .stat-item,
+      .cta-box,
       .footer {
         opacity: 1 !important;
         transform: none !important;
         filter: none !important;
         transition: none !important;
       }
+      .hero-title .grad { animation: none !important; }
       .hero-img-float { animation: none !important; }
       .hero-img-glow { animation: none !important; }
       .scroll-mouse::after { animation: none !important; }
@@ -391,7 +524,7 @@
       .feat-card:active { transform: none !important; }
     }
 
-    /* Noscript: show everything when JS is off */
+    /* Noscript */
     @media (scripting: none) {
       .hero-title .hw,
       .hero-sub .sw,
@@ -401,6 +534,8 @@
       .feat-title,
       .feat-sub,
       .feat-reveal,
+      .stat-item,
+      .cta-box,
       .footer {
         opacity: 1 !important;
         transform: none !important;
@@ -413,6 +548,7 @@
       .ln { padding: 14px 16px; }
       .ln.scrolled { padding: 12px 16px; }
       .feat-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr; gap: 32px; }
       .hero-btns { flex-direction: column; align-items: center; }
       .hero { padding: 80px 20px 60px; }
     }
@@ -429,7 +565,7 @@
 
   <div class="hero">
     <h1 class="hero-title" id="heroTitle">
-      <span class="hw"><span class="hl">H</span>ash</span>
+      <span class="hw"><span class="grad">H</span>ash</span>
       <span class="hw">Host</span>
     </h1>
     <p class="hero-sub" id="heroSub">
@@ -463,11 +599,30 @@
     </div>
   </div>
 
+  <!-- Stats -->
+  <section class="stats">
+    <div class="stats-grid">
+      <div class="stat-item" data-delay="0">
+        <div class="stat-number" data-target="12400">0</div>
+        <div class="stat-label">Uploads</div>
+      </div>
+      <div class="stat-item" data-delay="100">
+        <div class="stat-number" data-target="380">0</div>
+        <div class="stat-label">Usuarios</div>
+      </div>
+      <div class="stat-item" data-delay="200">
+        <div class="stat-number" data-target="99">0</div>
+        <div class="stat-label">Uptime %</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
   <section class="features">
     <div class="feat-header">
       <div class="feat-eyebrow" id="featEyebrow">Funcionalidades</div>
       <h2 class="feat-title" id="featTitle">Tudo que voce precisa</h2>
-      <p class="feat-sub" id="featSub">Compartilhe mídias com rapidez e controle total</p>
+      <p class="feat-sub" id="featSub">Compartilhe midias com rapidez e controle total</p>
     </div>
     <div class="feat-grid" id="featGrid">
       <div class="feat-reveal" data-delay="0">
@@ -527,6 +682,15 @@
     </div>
   </section>
 
+  <!-- CTA -->
+  <section class="cta">
+    <div class="cta-box" id="ctaBox">
+      <div class="cta-title">Comece agora</div>
+      <p class="cta-sub">Crie sua conta gratuita e comece a compartilhar midias em segundos</p>
+      <a href="/signup" class="btn btn-primary">Criar conta gratis</a>
+    </div>
+  </section>
+
   <footer class="footer" id="footer">HashHost</footer>
 
   <script src="/static/wavy-canvas.js"></script>
@@ -545,7 +709,7 @@
       }
       window.addEventListener('scroll', onScroll, { passive: true });
 
-      /* --- Hero title: word-by-word reveal with rotateX --- */
+      /* --- Hero title: word-by-word reveal --- */
       var titleWords = document.querySelectorAll('#heroTitle .hw');
       titleWords.forEach(function(w, i) {
         setTimeout(function() { w.classList.add('v'); }, 200 + i * 150);
@@ -565,7 +729,7 @@
       var heroImg = document.getElementById('heroImg');
       setTimeout(function() { heroImg.classList.add('v'); }, 400);
 
-      /* --- Scroll indicator: fade on scroll --- */
+      /* --- Scroll indicator fade --- */
       var scrollIndicator = document.getElementById('scrollIndicator');
       function updateScrollIndicator() {
         if (window.scrollY > 120) {
@@ -596,28 +760,104 @@
         }
       }, { passive: true });
 
-      /* --- Features: IntersectionObserver with varied entrances --- */
+      /* --- Scroll-linked background shift --- */
+      var bgTicking = false;
+      function shiftBg() {
+        var y = window.scrollY;
+        var h = document.documentElement.scrollHeight - window.innerHeight;
+        var progress = Math.min(y / h, 1);
+        var r = Math.round(progress * 3);
+        var g = Math.round(progress * 5);
+        var b = Math.round(progress * 15);
+        document.body.style.backgroundColor = 'rgb(' + r + ',' + g + ',' + b + ')';
+        bgTicking = false;
+      }
+      window.addEventListener('scroll', function() {
+        if (!bgTicking) {
+          requestAnimationFrame(shiftBg);
+          bgTicking = true;
+        }
+      }, { passive: true });
+
+      /* --- Button ripple effect --- */
+      document.querySelectorAll('.hero-btns .btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          var rect = btn.getBoundingClientRect();
+          var ripple = document.createElement('span');
+          ripple.className = 'ripple';
+          var size = Math.max(rect.width, rect.height);
+          ripple.style.width = ripple.style.height = size + 'px';
+          ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+          ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+          btn.appendChild(ripple);
+          setTimeout(function() { ripple.remove(); }, 600);
+        });
+      });
+
+      /* --- Button cursor glow --- */
+      document.querySelectorAll('.hero-btns .btn-primary').forEach(function(btn) {
+        btn.addEventListener('mousemove', function(e) {
+          var r = btn.getBoundingClientRect();
+          btn.style.setProperty('--bx', ((e.clientX - r.left) / r.width * 100) + '%');
+          btn.style.setProperty('--by', ((e.clientY - r.top) / r.height * 100) + '%');
+        });
+      });
+
+      /* --- Stats counter animation --- */
+      function animateCounter(el, target) {
+        var start = 0;
+        var duration = 1500;
+        var startTime = null;
+        function step(timestamp) {
+          if (!startTime) startTime = timestamp;
+          var progress = Math.min((timestamp - startTime) / duration, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          var current = Math.floor(eased * target);
+          if (target >= 1000) {
+            el.textContent = current.toLocaleString('pt-BR');
+          } else {
+            el.textContent = current;
+          }
+          if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+
+      /* --- Features + Stats + CTA + Footer: IntersectionObserver --- */
       var featEls = [
         document.getElementById('featEyebrow'),
         document.getElementById('featTitle'),
         document.getElementById('featSub')
       ];
       var featReveals = document.querySelectorAll('.feat-reveal');
+      var statItems = document.querySelectorAll('.stat-item');
+      var ctaBox = document.getElementById('ctaBox');
       var footer = document.getElementById('footer');
 
-      var allFeat = featEls.concat(Array.prototype.slice.call(featReveals)).concat([footer]);
-      var featObs = new IntersectionObserver(function(entries) {
+      var allReveal = featEls
+        .concat(Array.prototype.slice.call(featReveals))
+        .concat(Array.prototype.slice.call(statItems))
+        .concat([ctaBox, footer]);
+
+      var obs = new IntersectionObserver(function(entries) {
         entries.forEach(function(e) {
           if (e.isIntersecting) {
             var delay = parseInt(e.target.dataset.delay) || 0;
-            setTimeout(function() { e.target.classList.add('v'); }, delay);
-            featObs.unobserve(e.target);
+            setTimeout(function() {
+              e.target.classList.add('v');
+              /* trigger counter if stat */
+              var num = e.target.querySelector('.stat-number');
+              if (num && num.dataset.target) {
+                animateCounter(num, parseInt(num.dataset.target));
+              }
+            }, delay);
+            obs.unobserve(e.target);
           }
         });
       }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
-      allFeat.forEach(function(el) {
-        if (el) featObs.observe(el);
+      allReveal.forEach(function(el) {
+        if (el) obs.observe(el);
       });
 
       /* --- Feature card glare tracking --- */
