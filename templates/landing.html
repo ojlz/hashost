@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
+    html { scroll-behavior: smooth; }
+
     .landing-nav {
       position: fixed;
       top: 0;
@@ -19,6 +21,7 @@
       background: rgba(10, 10, 10, 0.8);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
+      transition: background 0.3s ease;
     }
     .landing-brand {
       font-size: 20px;
@@ -27,13 +30,14 @@
       color: var(--text1);
       text-decoration: none;
     }
-    .landing-brand span {
+    .landing-brand .hl {
       color: var(--accent);
     }
     .landing-nav-buttons {
       display: flex;
       gap: 10px;
     }
+
     .hero {
       min-height: 100vh;
       display: flex;
@@ -42,41 +46,80 @@
       justify-content: center;
       text-align: center;
       padding: 40px 24px;
+      position: relative;
+    }
+    .hero-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 999px;
+      background: rgba(0, 112, 243, 0.1);
+      border: 1px solid rgba(0, 112, 243, 0.2);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 24px;
+      letter-spacing: 0.05em;
     }
     .hero-title {
-      font-size: 56px;
+      font-size: 64px;
       font-weight: 700;
       letter-spacing: -0.04em;
       margin-bottom: 16px;
+      line-height: 1.1;
     }
-    .hero-title span {
+    .hero-title .hl {
       color: var(--accent);
     }
     .hero-tagline {
       color: var(--text2);
       font-size: 18px;
       margin-bottom: 40px;
-      max-width: 480px;
+      max-width: 500px;
+      line-height: 1.6;
     }
     .hero-buttons {
       display: flex;
       gap: 12px;
     }
+    .hero-scroll {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--text3);
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      animation: float 2s ease-in-out infinite;
+    }
+    .hero-scroll-line {
+      width: 1px;
+      height: 32px;
+      background: linear-gradient(to bottom, var(--text3), transparent);
+    }
+    @keyframes float {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(8px); }
+    }
+
     .features {
-      padding: 80px 24px;
-      max-width: 960px;
+      padding: 100px 24px;
+      max-width: 1000px;
       margin: 0 auto;
     }
-    .features-title {
+    .features-header {
       text-align: center;
-      font-size: 24px;
+      margin-bottom: 56px;
+    }
+    .features-title {
+      font-size: 28px;
       margin-bottom: 12px;
     }
     .features-subtitle {
-      text-align: center;
       color: var(--text2);
-      font-size: 14px;
-      margin-bottom: 48px;
+      font-size: 15px;
     }
     .features-grid {
       display: grid;
@@ -84,21 +127,49 @@
       gap: 16px;
     }
     .feature-card {
-      padding: 28px 20px;
+      padding: 32px 24px;
       text-align: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+      cursor: default;
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent);
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+    .feature-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+      border-color: rgba(0, 112, 243, 0.3);
+    }
+    .feature-card:hover::before {
+      transform: scaleX(1);
     }
     .feature-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      background: rgba(0, 112, 243, 0.1);
-      border: 1px solid rgba(0, 112, 243, 0.2);
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: rgba(0, 112, 243, 0.08);
+      border: 1px solid rgba(0, 112, 243, 0.15);
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
       color: var(--accent);
-      font-size: 20px;
+      font-size: 22px;
+      transition: transform 0.3s ease, background 0.3s ease;
+    }
+    .feature-card:hover .feature-icon {
+      transform: scale(1.1);
+      background: rgba(0, 112, 243, 0.15);
     }
     .feature-title {
       font-weight: 600;
@@ -110,6 +181,7 @@
       font-size: 13px;
       line-height: 1.6;
     }
+
     .footer {
       text-align: center;
       padding: 40px 24px;
@@ -117,17 +189,19 @@
       color: var(--text2);
       font-size: 13px;
     }
+
     @media (max-width: 640px) {
       .landing-nav { padding: 12px 16px; }
       .features-grid { grid-template-columns: 1fr; }
       .hero-buttons { flex-direction: column; }
       .hero-title { font-size: 36px; }
+      .hero-scroll { display: none; }
     }
   </style>
 </head>
 <body>
   <nav class="landing-nav">
-    <a href="/" class="landing-brand"><span>H</span>HashHost</a>
+    <a href="/" class="landing-brand"><span class="hl">H</span>ashHost</a>
     <div class="landing-nav-buttons">
       <a href="/login" class="btn btn-ghost btn-sm">Entrar</a>
       <a href="/signup" class="btn btn-primary btn-sm">Criar conta</a>
@@ -135,44 +209,51 @@
   </nav>
 
   <div class="hero">
-    <h1 class="hero-title"><span>H</span>HashHost</h1>
-    <p class="hero-tagline">Armazenamento e compartilhamento de mídias com links diretos para Discord e outras plataformas.</p>
+    <div class="hero-badge reveal-scale">OPEN SOURCE</div>
+    <h1 class="hero-title reveal"><span class="hl">H</span>ashHost</h1>
+    <p class="hero-tagline reveal">Armazenamento e compartilhamento de mídias com links diretos para Discord e outras plataformas.</p>
     <div class="hero-buttons stagger-children">
       <a href="/signup" class="btn btn-primary">Criar conta</a>
       <a href="/login" class="btn btn-ghost">Entrar</a>
     </div>
+    <div class="hero-scroll">
+      <span>Scroll</span>
+      <div class="hero-scroll-line"></div>
+    </div>
   </div>
 
-  <section class="features reveal">
-    <h2 class="features-title">Funcionalidades</h2>
-    <p class="features-subtitle">Tudo que você precisa para compartilhar mídias</p>
+  <section class="features">
+    <div class="features-header reveal">
+      <h2 class="features-title">Funcionalidades</h2>
+      <p class="features-subtitle">Tudo que você precisa para compartilhar mídias</p>
+    </div>
     <div class="features-grid stagger-children">
-      <div class="card feature-card hover-lift">
+      <div class="card feature-card">
         <div class="feature-icon">&#8682;</div>
         <div class="feature-title">Upload rápido</div>
         <div class="feature-desc">Envie imagens, GIFs, vídeos e áudios com drag and drop</div>
       </div>
-      <div class="card feature-card hover-lift">
+      <div class="card feature-card">
         <div class="feature-icon">&#9741;</div>
         <div class="feature-title">Embeds para Discord</div>
         <div class="feature-desc">Pré-visualização automática com cores e perfil personalizados</div>
       </div>
-      <div class="card feature-card hover-lift">
+      <div class="card feature-card">
         <div class="feature-icon">&#9881;</div>
         <div class="feature-title">API e ShareX</div>
         <div class="feature-desc">Upload automático via ShareX, OBS ou qualquer app por API</div>
       </div>
-      <div class="card feature-card hover-lift">
+      <div class="card feature-card">
         <div class="feature-icon">&#9201;</div>
         <div class="feature-title">Tempo de vida</div>
         <div class="feature-desc">Defina expiração: 1 hora, 3 dias, 1 semana, 1 mês ou permanente</div>
       </div>
-      <div class="card feature-card hover-lift">
+      <div class="card feature-card">
         <div class="feature-icon">&#128274;</div>
         <div class="feature-title">Convites</div>
         <div class="feature-desc">Sistema de convites com permissões customizáveis</div>
       </div>
-      <div class="card feature-card hover-lift">
+      <div class="card feature-card">
         <div class="feature-icon">&#9879;</div>
         <div class="feature-title">HashBin</div>
         <div class="feature-desc">Compartilhe código e texto com syntax highlighting</div>

@@ -121,12 +121,16 @@
         var rect = card.getBoundingClientRect();
         var x = (e.clientX - rect.left) / rect.width;
         var y = (e.clientY - rect.top) / rect.height;
-        var tiltX = (y - 0.5) * 6;
-        var tiltY = (x - 0.5) * -6;
-        card.style.transform = 'perspective(800px) rotateX(' + tiltX + 'deg) rotateY(' + tiltY + 'deg) translateY(-3px)';
+        var tiltX = (y - 0.5) * 8;
+        var tiltY = (x - 0.5) * -8;
+        var glareX = x * 100;
+        var glareY = y * 100;
+        card.style.transform = 'perspective(600px) rotateX(' + tiltX + 'deg) rotateY(' + tiltY + 'deg) translateY(-4px) scale(1.02)';
+        card.style.background = 'radial-gradient(circle at ' + glareX + '% ' + glareY + '%, rgba(0,112,243,0.06) 0%, transparent 60%), var(--surface2)';
       });
       card.addEventListener('mouseleave', function () {
         card.style.transform = '';
+        card.style.background = '';
       });
     });
   }
