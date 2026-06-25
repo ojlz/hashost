@@ -21,7 +21,7 @@
       background: rgba(10, 10, 10, 0.4);
       backdrop-filter: blur(0px);
       border-bottom: 1px solid transparent;
-      transition: background 0.3s ease-out, backdrop-filter 0.3s ease-out, border-color 0.3s ease-out;
+      transition: background 0.3s ease-out, backdrop-filter 0.3s ease-out, border-color 0.3s ease-out, padding 0.3s ease-out;
     }
     .ln.scrolled {
       background: rgba(10, 10, 10, 0.85);
@@ -36,7 +36,7 @@
       letter-spacing: -0.03em;
       color: var(--text1);
       text-decoration: none;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.2s ease-out;
     }
     .ln-brand:hover { opacity: 0.8; text-decoration: none; }
     .ln-brand .hl { color: var(--accent); }
@@ -54,7 +54,7 @@
       position: relative;
     }
 
-    /* Hero title — word reveal */
+    /* Hero title — word reveal with 3D flip */
     .hero-title {
       font-size: clamp(44px, 9vw, 88px);
       font-weight: 700;
@@ -65,6 +65,8 @@
       flex-wrap: wrap;
       justify-content: center;
       gap: 0 0.25em;
+      text-wrap: balance;
+      perspective: 800px;
     }
     .hero-title .hw {
       display: inline-block;
@@ -90,6 +92,7 @@
       flex-wrap: wrap;
       justify-content: center;
       gap: 0 0.3em;
+      text-wrap: balance;
     }
     .hero-sub .sw {
       display: inline-block;
@@ -106,7 +109,7 @@
       transform: translateY(0);
     }
 
-    /* Hero buttons */
+    /* Hero buttons — press feedback */
     .hero-btns {
       display: flex;
       gap: 12px;
@@ -118,6 +121,12 @@
     .hero-btns.v {
       opacity: 1;
       transform: translateY(0);
+    }
+    .hero-btns .btn {
+      transition: transform 0.16s cubic-bezier(0.23, 1, 0.32, 1), background 0.15s ease, box-shadow 0.15s ease;
+    }
+    .hero-btns .btn:active {
+      transform: scale(0.97);
     }
 
     /* --- Hero Image --- */
@@ -172,7 +181,7 @@
       50% { transform: translateY(-8px); }
     }
 
-    /* --- Scroll indicator --- */
+    /* --- Scroll indicator — fades on scroll --- */
     .scroll-indicator {
       position: absolute;
       bottom: 40px;
@@ -186,6 +195,7 @@
       transition: opacity 0.5s ease-out 1.2s;
     }
     .hero-btns.v ~ .scroll-indicator { opacity: 1; }
+    .scroll-indicator.hidden { opacity: 0 !important; transition: opacity 0.3s ease-out !important; }
     .scroll-indicator span {
       font-size: 11px;
       color: var(--text2);
@@ -245,6 +255,7 @@
       opacity: 0;
       transform: translateY(20px);
       transition: opacity 0.4s ease-out 0.08s, transform 0.4s ease-out 0.08s;
+      text-wrap: balance;
     }
     .feat-title.v { opacity: 1; transform: translateY(0); }
     .feat-sub {
@@ -289,6 +300,10 @@
                   box-shadow 0.25s ease-out,
                   border-color 0.25s ease-out;
     }
+    .feat-card:active {
+      transform: scale(0.98) !important;
+      transition-duration: 0.1s;
+    }
     .feat-card::after {
       content: '';
       position: absolute;
@@ -319,7 +334,9 @@
       margin-bottom: 18px;
       color: var(--accent);
       font-size: 22px;
-      transition: background 0.25s ease-out, box-shadow 0.25s ease-out;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  background 0.25s ease-out,
+                  box-shadow 0.25s ease-out;
     }
     @media (hover: hover) and (pointer: fine) {
       .feat-card:hover .feat-icon {
@@ -332,11 +349,6 @@
       .feat-card:nth-child(4):hover .feat-icon { transform: scale(1.15) rotate(-4deg) translateY(-2px); }
       .feat-card:nth-child(5):hover .feat-icon { transform: scale(1.2); }
       .feat-card:nth-child(6):hover .feat-icon { transform: scale(1.15) rotate(8deg); }
-    }
-    .feat-icon {
-      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
-                  background 0.25s ease-out,
-                  box-shadow 0.25s ease-out;
     }
 
     .feat-name { font-weight: 600; margin-bottom: 8px; font-size: 15px; }
@@ -374,6 +386,9 @@
       .hero-img-glow { animation: none !important; }
       .scroll-mouse::after { animation: none !important; }
       .ln { transition: none !important; }
+      .hero-btns .btn { transition: none !important; }
+      .feat-card { transition: none !important; }
+      .feat-card:active { transform: none !important; }
     }
 
     /* Noscript: show everything when JS is off */
@@ -442,7 +457,7 @@
         <img class="hero-img" src="{{ url_for('static', filename='land.png') }}" alt="HashHost upload" loading="lazy">
       </div>
     </div>
-    <div class="scroll-indicator">
+    <div class="scroll-indicator" id="scrollIndicator">
       <div class="scroll-mouse"></div>
       <span>Scroll</span>
     </div>
@@ -550,7 +565,18 @@
       var heroImg = document.getElementById('heroImg');
       setTimeout(function() { heroImg.classList.add('v'); }, 400);
 
-      /* --- Parallax on hero image (single scroll effect, no redundant fade) --- */
+      /* --- Scroll indicator: fade on scroll --- */
+      var scrollIndicator = document.getElementById('scrollIndicator');
+      function updateScrollIndicator() {
+        if (window.scrollY > 120) {
+          scrollIndicator.classList.add('hidden');
+        } else {
+          scrollIndicator.classList.remove('hidden');
+        }
+      }
+      window.addEventListener('scroll', updateScrollIndicator, { passive: true });
+
+      /* --- Parallax on hero image --- */
       var imgWrap = document.querySelector('.hero-img-wrap');
       var ticking = false;
       function parallax() {
