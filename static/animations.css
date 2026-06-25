@@ -326,7 +326,7 @@ input:focus, textarea:focus, select:focus {
 }
 
 .logo:hover {
-  transform: scale(1.05);
+  transform: scale(1.03);
 }
 
 .logo span {
@@ -334,7 +334,7 @@ input:focus, textarea:focus, select:focus {
 }
 
 .logo:hover span {
-  color: #005fcc;
+  color: var(--accent);
 }
 
 /* --- Upload Zone Animation --- */
@@ -558,15 +558,15 @@ input:focus, textarea:focus, select:focus {
 
 .glitch:hover::before {
   animation: glitch-1 0.3s ease;
-  opacity: 0.8;
+  opacity: 0.6;
   color: var(--accent);
   clip-path: inset(20% 0 30% 0);
 }
 
 .glitch:hover::after {
   animation: glitch-2 0.3s ease;
-  opacity: 0.8;
-  color: var(--danger);
+  opacity: 0.4;
+  color: var(--text1);
   clip-path: inset(60% 0 10% 0);
 }
 
