@@ -5,7 +5,7 @@
      SCROLL REVEAL - IntersectionObserver
      ============================================================ */
   function initScrollReveal() {
-    var elements = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale, .stagger-children');
+    var elements = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale');
     if (!elements.length) return;
 
     var observer = new IntersectionObserver(function (entries) {
@@ -18,6 +18,25 @@
     }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
     elements.forEach(function (el) { observer.observe(el); });
+
+    var staggers = document.querySelectorAll('.stagger-children');
+    staggers.forEach(function (container) {
+      var children = container.children;
+      Array.prototype.forEach.call(children, function (child, i) {
+        child.style.transitionDelay = (i * 0.08) + 's';
+      });
+      var sObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            Array.prototype.forEach.call(entry.target.children, function (child) {
+              child.classList.add('stagger-active');
+            });
+            sObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+      sObserver.observe(container);
+    });
   }
 
   /* ============================================================
@@ -57,24 +76,6 @@
     }, { threshold: 0.5 });
 
     stats.forEach(function (el) { observer.observe(el); });
-  }
-
-  /* ============================================================
-     SCROLL PROGRESS BAR
-     ============================================================ */
-  function initScrollProgress() {
-    var bar = document.createElement('div');
-    bar.className = 'scroll-progress';
-    bar.setAttribute('aria-hidden', 'true');
-    bar.style.width = '0%';
-    document.body.appendChild(bar);
-
-    window.addEventListener('scroll', function () {
-      var scrollTop = window.scrollY;
-      var docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      var progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-      bar.style.width = progress + '%';
-    }, { passive: true });
   }
 
   /* ============================================================
@@ -243,7 +244,6 @@
   function init() {
     initScrollReveal();
     initCounters();
-    initScrollProgress();
     initNavbarScroll();
     initMagneticButtons();
     initTiltEffect();

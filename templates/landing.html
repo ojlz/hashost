@@ -39,7 +39,7 @@
     }
 
     .hero {
-      min-height: 100vh;
+      min-height: 80vh;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -47,18 +47,6 @@
       text-align: center;
       padding: 40px 24px;
       position: relative;
-    }
-    .hero-badge {
-      display: inline-block;
-      padding: 6px 16px;
-      border-radius: 999px;
-      background: rgba(0, 112, 243, 0.1);
-      border: 1px solid rgba(0, 112, 243, 0.2);
-      color: var(--accent);
-      font-size: 12px;
-      font-weight: 500;
-      margin-bottom: 24px;
-      letter-spacing: 0.05em;
     }
     .hero-title {
       font-size: 64px;
@@ -80,28 +68,6 @@
     .hero-buttons {
       display: flex;
       gap: 12px;
-    }
-    .hero-scroll {
-      position: absolute;
-      bottom: 32px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: var(--text3);
-      font-size: 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      animation: float 2s ease-in-out infinite;
-    }
-    .hero-scroll-line {
-      width: 1px;
-      height: 32px;
-      background: linear-gradient(to bottom, var(--text3), transparent);
-    }
-    @keyframes float {
-      0%, 100% { transform: translateX(-50%) translateY(0); }
-      50% { transform: translateX(-50%) translateY(8px); }
     }
 
     .features {
@@ -195,7 +161,6 @@
       .features-grid { grid-template-columns: 1fr; }
       .hero-buttons { flex-direction: column; }
       .hero-title { font-size: 36px; }
-      .hero-scroll { display: none; }
     }
   </style>
 </head>
@@ -209,16 +174,11 @@
   </nav>
 
   <div class="hero">
-    <div class="hero-badge reveal-scale">OPEN SOURCE</div>
     <h1 class="hero-title reveal"><span class="hl">H</span>ashHost</h1>
     <p class="hero-tagline reveal">Armazenamento e compartilhamento de mídias com links diretos para Discord e outras plataformas.</p>
     <div class="hero-buttons stagger-children">
       <a href="/signup" class="btn btn-primary">Criar conta</a>
       <a href="/login" class="btn btn-ghost">Entrar</a>
-    </div>
-    <div class="hero-scroll">
-      <span>Scroll</span>
-      <div class="hero-scroll-line"></div>
     </div>
   </div>
 
