@@ -351,8 +351,6 @@
     .stat-item {
       opacity: 0;
       transform: translateY(24px);
-      transition: opacity 0.5s ease-out, transform 0.5s ease-out;
-    }
     .stat-item.v { opacity: 1; transform: translateY(0); }
     .stat-number {
       font-size: clamp(36px, 5vw, 48px);
@@ -418,8 +416,6 @@
     .feat-reveal {
       opacity: 0;
       transform: translateY(40px);
-      transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-    }
     .feat-reveal.from-left { transform: translateX(-30px) translateY(16px); }
     .feat-reveal.from-right { transform: translateX(30px) translateY(16px); }
     .feat-reveal.v { opacity: 1; transform: translateY(0) translateX(0); }
@@ -693,6 +689,8 @@
 
   <footer class="footer" id="footer">HashHost</footer>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   <script src="/static/wavy-canvas.js"></script>
   <script>
     (function() {
@@ -876,33 +874,93 @@
       }
 
       /* ============================================================
-         INTERSECTION OBSERVER
+         GSAP SCROLL TRIGGERS
          ============================================================ */
-      var revealEls = [
-        document.getElementById('featEyebrow'),
-        document.getElementById('featTitle'),
-        document.getElementById('featSub'),
-        document.getElementById('demoCard'),
-        document.getElementById('ctaBox'),
-        document.getElementById('footer')
-      ].concat(Array.prototype.slice.call(document.querySelectorAll('.feat-reveal')))
-       .concat(Array.prototype.slice.call(document.querySelectorAll('.stat-item')));
+      gsap.registerPlugin(ScrollTrigger);
 
-      var obs = new IntersectionObserver(function(entries) {
-        entries.forEach(function(e) {
-          if (e.isIntersecting) {
-            var delay = parseInt(e.target.dataset.delay) || 0;
-            setTimeout(function() {
-              e.target.classList.add('v');
-              var num = e.target.querySelector('.stat-number');
-              if (num && num.dataset.target) animateCounter(num, parseInt(num.dataset.target));
-            }, delay);
-            obs.unobserve(e.target);
-          }
+      // Demo card
+      ScrollTrigger.create({
+        trigger: '#demoCard',
+        start: 'top 85%',
+        onEnter: function() { document.getElementById('demoCard').classList.add('v'); },
+        once: true
+      });
+
+      // Features header
+      var featEls = ['featEyebrow', 'featTitle', 'featSub'];
+      featEls.forEach(function(id) {
+        ScrollTrigger.create({
+          trigger: '#' + id,
+          start: 'top 88%',
+          onEnter: function() { document.getElementById(id).classList.add('v'); },
+          once: true
         });
-      }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+      });
 
-      revealEls.forEach(function(el) { if (el) obs.observe(el); });
+      // Feature cards — stagger with direction
+      var featCards = document.querySelectorAll('.feat-reveal');
+      if (featCards.length) {
+        ScrollTrigger.create({
+          trigger: '.feat-grid',
+          start: 'top 80%',
+          onEnter: function() {
+            gsap.to(featCards, {
+              opacity: 1,
+              y: 0,
+              x: 0,
+              duration: 0.6,
+              ease: 'power3.out',
+              stagger: 0.12,
+              onComplete: function() {
+                featCards.forEach(function(c) { c.classList.add('v'); });
+              }
+            });
+          },
+          once: true
+        });
+      }
+
+      // Stats — stagger + counter
+      var statItems = document.querySelectorAll('.stat-item');
+      if (statItems.length) {
+        ScrollTrigger.create({
+          trigger: '.stats-grid',
+          start: 'top 82%',
+          onEnter: function() {
+            gsap.to(statItems, {
+              opacity: 1,
+              y: 0,
+              duration: 0.5,
+              ease: 'power2.out',
+              stagger: 0.15,
+              onComplete: function() {
+                statItems.forEach(function(s) { s.classList.add('v'); });
+                statItems.forEach(function(s) {
+                  var num = s.querySelector('.stat-number');
+                  if (num && num.dataset.target) animateCounter(num, parseInt(num.dataset.target));
+                });
+              }
+            });
+          },
+          once: true
+        });
+      }
+
+      // CTA
+      ScrollTrigger.create({
+        trigger: '#ctaBox',
+        start: 'top 85%',
+        onEnter: function() { document.getElementById('ctaBox').classList.add('v'); },
+        once: true
+      });
+
+      // Footer
+      ScrollTrigger.create({
+        trigger: '#footer',
+        start: 'top 90%',
+        onEnter: function() { document.getElementById('footer').classList.add('v'); },
+        once: true
+      });
 
       /* ============================================================
          CARD glare
