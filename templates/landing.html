@@ -265,6 +265,7 @@
     .demo-upload-zone:hover {
       border-color: var(--accent);
       background: rgba(0, 112, 243, 0.04);
+      animation: borderGlow 1.5s ease infinite;
     }
     .demo-upload-zone .plus {
       font-size: 36px;
@@ -851,7 +852,12 @@
       }
 
       demoSubmit.addEventListener('click', function() {
-        window.location.href = '/signup';
+        var btn = this;
+        btn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:8px"></span> Enviando...';
+        btn.disabled = true;
+        setTimeout(function() {
+          window.location.href = '/signup';
+        }, 1500);
       });
 
       /* ============================================================
